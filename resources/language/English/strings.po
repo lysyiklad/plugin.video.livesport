@@ -1,0 +1,59 @@
+# Kodi Media Center language file
+# Addon Name: LiveSport
+# Addon id: plugin.video.livesport
+# Addon Provider: lysyi
+
+msgid ""
+msgstr ""
+
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: en\n"
+
+msgctxt "#30000"
+msgid "All"
+msgstr ""
+
+msgctxt "#30001"
+msgid "Football"
+msgstr ""
+
+msgctxt "#30002"
+msgid "Ice Hockey"
+msgstr ""
+
+msgctxt "#30003"
+msgid "Basketball"
+msgstr ""
+
+msgctxt "#30004"
+msgid "Tennis"
+msgstr ""
+
+msgctxt "#30005"
+msgid "American Football"
+msgstr ""
+
+msgctxt "#30006"
+msgid "Race"
+msgstr ""
+
+msgctxt "#30007"
+msgid "Boxing"
+msgstr ""
+
+msgctxt "#30008"
+msgid "MMA"
+msgstr ""
+
+msgctxt "#30009"
+msgid "Live"
+msgstr ""
+
+
+
+
+
+
+
+
