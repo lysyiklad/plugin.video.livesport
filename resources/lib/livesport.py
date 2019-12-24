@@ -8,6 +8,7 @@ import pickle
 import json
 
 import xbmcgui
+import xbmcaddon
 
 import bs4
 import dateutil
@@ -16,20 +17,6 @@ from dateutil.tz import tzlocal, tzoffset
 
 from plugin import Plugin, _
 from . import makeart
-
-
-# def _upper(t):
-#     RUS = {u"А": u"а", u"Б": u"б", u"В": u"в", u"Г": u"г", u"Д": u"д", u"Е": u"е", u"Ё": u"ё",
-#            u"Ж": u"ж", u"З": u"з", u"И": u"и", u"Й": u"й", u"К": u"к", u"Л": u"л", u"М": u"м",
-#            u"Н": u"н", u"О": u"о", u"П": u"п", u"Р": u"р", u"С": u"с", u"Т": u"т", u"У": u"у",
-#            u"Ф": u"ф", u"Х": u"х", u"Ц": u"ц", u"Ч": u"ч", u"Ш": u"ш", u"Щ": u"щ", u"Ъ": u"ъ",
-#            u"Ы": u"ы", u"Ь": u"ь", u"Э": u"э", u"Ю": u"ю", u"Я": u"я"}
-
-#     for i in RUS.keys():
-#         t = t.replace(RUS[i], i)
-#     for i in range(65, 90):
-#         t = t.replace(chr(i + 32), chr(i))
-#     return t
 
 
 class LiveSport(Plugin):
@@ -223,7 +210,14 @@ class LiveSport(Plugin):
             thumb = ''
             fanart = ''
 
-            if True:    #self.is_create_artwork():
+            self.log('1 TTTTTTTTTTTTTTTTTTTTTTTTTTTT %s' %
+                     self.get_setting('is_thumb', convert=True))
+            self.log('2 TTTTTTTTTTTTTTTTTTTTTTTTTTTT %s' %
+                     xbmcaddon.Addon().getSetting('is_thumb'))
+
+                     
+            if xbmcaddon.Addon().getSetting('is_thumb') == 'true':
+                #self.logd(self.get_setting('is_thumb'), 'ttttttt')
                 art = makeart.ArtWorkFootBall(self,
                                                 id=id_,
                                                 date=self.time_to_local(date_utc),
@@ -233,39 +227,17 @@ class LiveSport(Plugin):
                                                 logo_home=icon1,
                                                 logo_away=icon2)
 
-                #theme_artwork = self.get_setting('theme_artwork')
-
-                # if theme_artwork == 0:
-                #     art.set_light_theme()
-                # elif theme_artwork == 1:
-                #     art.set_dark_theme()
-                # elif theme_artwork == 2:
-                #     art.set_blue_theme()
-                # elif theme_artwork == 3:
-                #     art.set_transparent_theme()
-                # else:
-                #     self.logd('_parse_listing',
-                #                 'error set artwork theme')
-                #     art.set_light_theme()
+                
                 art.set_transparent_theme()
-
-                # if self.get_setting('is_thumb'):
-                #     thumb = art.create_thumb()
-                #     self.logd('_parse_listing', thumb)
-                # if self.get_setting('is_fanart'):
-                #     fanart = art.create_fanart()
-                #     self.logd('_parse_listing', fanart)
-                # if self.get_setting('is_poster'):
-                #     poster = art.create_poster()
-                #     self.logd('_parse_listing', poster)
                 thumb = art.create_fanart()
+                icon_sport = thumb
 
 
             self.logd(
                 'parse_listing', 'ADD MATCH - %s - %s' % (self.time_to_local(date_utc), game))
 
-            if id_ not in listing:
-                listing[id_] = {}
+            #if id_ not in listing:
+            listing[id_] = {}
             item = listing[id_]
             item['id'] = id_
             item['id_event'] = id_event
@@ -275,7 +247,7 @@ class LiveSport(Plugin):
             item['league'] = league
             item['date'] = date_utc
             item['thumb'] = thumb
-            item['icon'] = thumb
+            item['icon'] = icon_sport
             item['poster'] = poster
             item['fanart'] = fanart
             item['icon1'] = icon1
@@ -440,6 +412,12 @@ class LiveSport(Plugin):
             l.append({'label': '[UPPERCASE][B][COLOR FF0084FF][{}][/COLOR][/UPPERCASE][/B]'.format(_('Refresh')),
                       'url': self.get_url(action='listing', sort=params['sort'])})
         return l + self._get_listing(params=params)
+        # return self.create_listing(l + self._get_listing(params=params),
+        #                            content='movies',
+        #                         #    view_mode=55,
+        #                         #    sort_methods=(
+        #                         #        xbmcplugin.SORT_METHOD_DATEADDED, xbmcplugin.SORT_METHOD_VIDEO_RATING),
+        #                            cache_to_disk=False)
 
     def _get_listing(self, params=None):
         """
@@ -458,6 +436,7 @@ class LiveSport(Plugin):
 
         try:
             for item in self._listing.values():
+                self.logd(item['label'].encode('utf-8'), str(item))
 
                 info_match = self._get_mini_info_math(item['id_event'], center)
 
@@ -472,6 +451,9 @@ class LiveSport(Plugin):
                 if not (filter is None or filter == 'all' or filter == 'live' or filter == 'offline'):
                     if filter != item['sport']:
                         continue
+                
+                if self.get_setting('is_noold_item') and info_match['status'] == u'OFFLINE' and filter != 'offline':
+                    continue
 
                 if filter == 'live' and info_match['status'] != u'LIVE':
                     continue

@@ -271,11 +271,11 @@ class Plugin(simpleplugin.Plugin):
             self.logd('update', 'self._listing None')
             return
 
-        if self.get_setting('is_noold_item'):
-            for id in self._listing.keys():
-                dt = self._time_now_date(id)
-                if dt < -180:
-                    del self._listing[id]
+        # if self.get_setting('is_noold_item'):
+        #     for id in self._listing.keys():
+        #         dt = self._time_now_date(id)
+        #         if dt < -180:
+        #             del self._listing[id]
 
         for item in self._listing.values():
             if 'thumb' not in item:
@@ -329,7 +329,7 @@ class Plugin(simpleplugin.Plugin):
         self.dump()
         self.log('STOP UPDATE')
         progress.update(100, self.name, 'Завершение обновлений...')
-        xbmc.sleep(2)
+        xbmc.sleep(500)
 
         self.log('***** 6')
 
@@ -581,11 +581,11 @@ class Plugin(simpleplugin.Plugin):
         for pic in pics:
             pic = os.path.join(self.dir('thumb'), pic)
             self.remove_thumb(pic)
-        fs = os.listdir(self.config_dir)
-        for f in fs:
-            if f != 'settings.xml' and f != 'thumb':
-                f = os.path.join(self.config_dir, f)
-                os.remove(f)
+        # fs = os.listdir(self.config_dir)
+        # for f in fs:
+        #     if f != 'settings.xml' and f != 'thumb' and f != '__gettext__.pcl':
+        #         f = os.path.join(self.config_dir, f)
+        #         os.remove(f)
 
     def get_path_acestream(self, href):
         """

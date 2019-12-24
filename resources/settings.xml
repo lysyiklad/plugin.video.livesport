@@ -6,18 +6,18 @@
 		<setting label="Часовой пояс сайта" type="labelenum" id="time_zone_site" values="-12|-11|-10|-9|-8|-7|-6|-5|-4|-3|-2|-1|0|1|2|3|4|5|6|7|8|9|10|11|12" default="3" />
 		<setting id="is_play" type="bool" label="Воспроизвести сразу без выбора ссылок" default="false" visible="false"/>
 		<setting label="Ссылка по умолчанию для воспроизведения" type="labelenum" id="play_engine" values="Ace Stream|SopCast" default="Ace Stream" visible="eq(-1,true)" />
-		<setting id="is_noold_item" type="bool" label="Не показывать прошедшие матчи (более 3 час.)" default="true" visible="true"/>
-		<setting id="is_date_item" type="bool" label="Показывать дату в элементе списка" default="true" visible="true"/>        
-		<setting id="is_league_item" type="bool" label="Показывать турнир в элементе списка" default="true" visible="true"/>        
+		<setting id="is_noold_item" type="bool" label="Не показывать прошедшие матчи" default="true" visible="true"/>
+		<setting id="is_date_item" type="bool" label="Показывать дату в элементе списка" default="true" visible="false"/>        
+		<setting id="is_league_item" type="bool" label="Показывать турнир в элементе списка" default="true" visible="false"/>        
         <setting id="is_debug" type="bool" label="Включить отладочный режим" default="true" visible="false"/>
 		<setting id="reset" option="close" type="action" label="Полное обновление данных" action="RunPlugin(plugin://plugin.video.livesport?action=reset)" />
 	</category>
 	<category label="Парсинг">
 		<setting id="is_poster" type="bool" label="Создавать постеры" default="false" visible="false"/>
-		<setting id="is_thumb" type="bool" label="Создавать миниатюры" default="false" visible="false"/>
+		<setting id="is_thumb" type="bool" label="Создавать миниатюры" default="false" visible="true"/>
 		<setting id="is_fanart" type="bool" label="Создавать фанарты" default="false" visible="false"/>
-		<setting id="is_http_link" type="bool" label="Сканировать прямые ссылки на трансляции" default="true" visible="true"/>
-		<setting id="is_http_acesop" type="bool" label="Сканировать acestream и sopcast ссылки на трансляции" default="true" visible="true"/>	
+		<setting id="is_http_link" type="bool" label="Сканировать прямые ссылки на трансляции" default="true" visible="false"/>
+		<setting id="is_http_acesop" type="bool" label="Сканировать acestream и sopcast ссылки на трансляции" default="true" visible="false"/>	
 		<setting id="is_pars_links" type="bool" label="Парсить ссылки" default="false" visible="true"/>
         <setting id="delta_scan" type="number" label="Период обновления данных, мин." default="120" visible="true"/>
 		<setting id="delta_links" type="number" label="Время до матча для обязательного парсинга ссылок, мин." default="30" visible="true"/>

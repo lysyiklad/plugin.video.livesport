@@ -7,7 +7,7 @@ from resources.lib.livesport import LiveSport
 
 plugin = LiveSport()
 
-_ = plugin.initialize_gettext()
+#_ = plugin.initialize_gettext()
 
 @plugin.action()
 def root(params):    
