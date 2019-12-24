@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8" standalone="yes"?>
 <settings>
 	<category label="Основные" visible="false">
-		<setting id="url_site" type="text" label="URL" default="https://myfootball.top" visible="true" />		
+		<setting id="url_site" type="text" label="URL" default="https://livesport.ws" visible="true" />		
 		<setting id="selected_leagues" type="text" label="selected_leagues" default="0" visible="false" />		
 		<setting label="Часовой пояс сайта" type="labelenum" id="time_zone_site" values="-12|-11|-10|-9|-8|-7|-6|-5|-4|-3|-2|-1|0|1|2|3|4|5|6|7|8|9|10|11|12" default="3" />
 		<setting id="is_play" type="bool" label="Воспроизвести сразу без выбора ссылок" default="false" visible="false"/>

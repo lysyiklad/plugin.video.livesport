@@ -1,5 +1,7 @@
 ﻿# -*- coding: utf-8 -*-
 
+import xbmcgui
+
 from resources.lib.livesport import LiveSport
 
 plugin = LiveSport()
@@ -10,14 +12,12 @@ _ = plugin.initialize_gettext()
 def root():
     return plugin.create_listing_()
 
-@plugin.action()
-def create_listing_football():
-    return plugin.create_listing_sport(u'football')
-
 
 @plugin.action()
-def create_listing_hockey():
-    return plugin.create_listing_sport(u'hockey')
+def listing(params):
+    # xbmcgui.Dialog().notification(
+    #     plugin.name, str(params), xbmcgui.NOTIFICATION_INFO, 1000)
+    return plugin.create_listing_filter(params=params)
 
 
 @plugin.action()
@@ -36,12 +36,9 @@ def reset():
 
 
 @plugin.action()
-def reset_inter():
-    return plugin.create_listing_()
-
-
-@plugin.action()
 def select_matches(params):
+    # xbmcgui.Dialog().notification(
+    #     plugin.name, str(params), xbmcgui.NOTIFICATION_INFO, 1000)
     plugin.select_matches(params)
 
 

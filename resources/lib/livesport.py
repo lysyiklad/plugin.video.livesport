@@ -7,7 +7,7 @@ from urlparse import urlparse
 import pickle
 import json
 
-# import xbmcgui
+import xbmcgui
 
 import bs4
 import dateutil
@@ -15,8 +15,6 @@ from dateutil.parser import *
 from dateutil.tz import tzlocal, tzoffset
 
 from plugin import Plugin, _
-
-
 
 
 # def _upper(t):
@@ -33,40 +31,83 @@ from plugin import Plugin, _
 #     return t
 
 
-
 class LiveSport(Plugin):
 
     def __init__(self):
         super(LiveSport, self).__init__()
         if self._language != 'Russian':
-            self._site = os.path.join(self._site, 'en')
-        
+            self._site = os.path.join(self.get_setting('url_site'), 'en')
+        else:
+            self._site = self.get_setting('url_site')
+
 
     def create_listing_(self):
-        #self.update()
-        select_item = [{'label': '[UPPERCASE][COLOR FFFF0000][B]{}[/B][/COLOR][/UPPERCASE]'.format(_('Live')),
-                        'url': self.get_url(action='reset_inter')}, 
-                       {'label': '[UPPERCASE][COLOR FF0084FF][B]{}[/B][/COLOR][/UPPERCASE]'.format(_('All')),
-                        'url': self.get_url(action='reset_inter')},
-                       {'label': '[UPPERCASE][COLOR FF0084FF][B]{}[/B][/COLOR][/UPPERCASE]'.format(_('Football')),
-                        'url': self.get_url(action='create_listing_football')},
-                       {'label': '[UPPERCASE][COLOR FF0084FF][B]{}[/B][/COLOR][/UPPERCASE]'.format(_('Ice Hockey')),
-                        'url': self.get_url(action='create_listing_hockey')},
-                       {'label': '[UPPERCASE][COLOR FF0084FF][B]{}[/B][/COLOR][/UPPERCASE]'.format(_('Basketball')),
-                        'url': self.get_url(action='create_listing_football')},
-                       {'label': '[UPPERCASE][COLOR FF0084FF][B]{}[/B][/COLOR][/UPPERCASE]'.format(_('Tennis')),
-                        'url': self.get_url(action='create_listing_football')},
-                       {'label': '[UPPERCASE][COLOR FF0084FF][B]{}[/B][/COLOR][/UPPERCASE]'.format(_('American Football')),
-                        'url': self.get_url(action='create_listing_football')},
-                       {'label': '[UPPERCASE][COLOR FF0084FF][B]{}[/B][/COLOR][/UPPERCASE]'.format(_('Race')),
-                        'url': self.get_url(action='create_listing_football')},
-                       {'label': '[UPPERCASE][COLOR FF0084FF][B]{}[/B][/COLOR][/UPPERCASE]'.format(_('Boxing')),
-                        'url': self.get_url(action='create_listing_football')},
-            
-           
-                       ]
-        
-        return select_item  #+ self.get_listing()
+        self.update()
+        listing = [{'label': '[UPPERCASE][B][COLOR FF0084FF][{}][/COLOR][/B][/UPPERCASE]'.format(_('League Choice')), 'url': self.get_url(action='select_matches')},
+                   {'label': '[UPPERCASE][COLOR FFFF0000][B]{}[/B][/COLOR][/UPPERCASE]'.format(_('Live')),
+                    'icon': os.path.join(self.dir('media'), 'live.png'),
+                    'url': self.get_url(action='listing', sort='live')},
+                   {'label': '[UPPERCASE][COLOR FF999999][B]{}[/B][/COLOR][/UPPERCASE]'.format(_('Offline')),
+                    'icon': os.path.join(self.dir('media'), 'offline.png'),
+                    'url': self.get_url(action='listing', sort='offline')},
+                   {'label': '[UPPERCASE][B]{}[/B][/UPPERCASE]'.format(_('All')),
+                    'icon': self.icon,
+                    'url': self.get_url(action='listing', sort='all')},
+                   {'label': '[UPPERCASE][B]{}[/B][/UPPERCASE]'.format(_('Football')),
+                    'icon': os.path.join(self.dir('media'), 'football.png'),
+                    'url': self.get_url(action='listing', sort='football')},
+                   {'label': '[UPPERCASE][B]{}[/B][/UPPERCASE]'.format(_('Ice Hockey')),
+                    'icon': os.path.join(self.dir('media'), 'hockey.png'),
+                    'url': self.get_url(action='listing', sort='hockey')},
+                   {'label': '[UPPERCASE][B]{}[/B][/UPPERCASE]'.format(_('Basketball')),
+                    'icon': os.path.join(self.dir('media'), 'basketball.png'),
+                    'url': self.get_url(action='listing', sort='basketball')},
+                   {'label': '[UPPERCASE][B]{}[/B][/UPPERCASE]'.format(_('Tennis')),
+                    'icon': os.path.join(self.dir('media'), 'tennis.png'),
+                    'url': self.get_url(action='listing', sort='tennis')},
+                   {'label': '[UPPERCASE][B]{}[/B][/UPPERCASE]'.format(_('American Football')),
+                    'icon': os.path.join(self.dir('media'), 'american_football.png'),
+                    'url': self.get_url(action='listing', sort='american_football')},
+                   {'label': '[UPPERCASE][B]{}[/B][/UPPERCASE]'.format(_('Race')),
+                   'icon': os.path.join(self.dir('media'), 'race.png'),
+                    'url': self.get_url(action='listing', sort='race')},
+                   {'label': '[UPPERCASE][B]{}[/B][/UPPERCASE]'.format(_('Boxing')),
+                    'icon': os.path.join(self.dir('media'), 'boxing.png'),
+                    'url': self.get_url(action='listing', sort='boxing')},                   
+                   ]
+        return listing
+
+    def _load_leagues(self):
+        file_pickle = os.path.join(self.config_dir, 'leagues.pickle')
+        if os.path.exists(file_pickle):
+            with open(file_pickle, 'r') as f:
+                return pickle.load(f)
+        else:
+            data = [_('All'), ]
+            with open(file_pickle, 'wt') as f:
+                f.write(pickle.dumps(data, 0))
+            with open(file_pickle, 'r') as f:
+                return pickle.load(f)
+
+    def _get_selected_leagues(self):
+        sl = str(self.get_setting('selected_leagues'))
+        if not sl:
+            sl = '0'
+        return map(lambda x: int(x), sl.split(','))
+
+    def select_matches(self, params):
+
+        selected_leagues = self._get_selected_leagues()
+
+        result = xbmcgui.Dialog().multiselect(
+            'Выбор турнира', self._load_leagues(), preselect=selected_leagues)
+
+        if result is not None:
+            if not len(result):
+                result.append(0)
+            self.set_setting('selected_leagues', ','.join(str(x)
+                                                          for x in result))
+            self.on_settings_changed()
 
     def _parse_listing(self, html, progress=None):
         """
@@ -97,8 +138,8 @@ class LiveSport(Plugin):
                     }
         """
         i = 1
-        # leagues = self._load_leagues()
-        # selected_leagues = self._get_selected_leagues()
+        leagues = self._load_leagues()
+        selected_leagues = self._get_selected_leagues()
 
         listing = {}
 
@@ -118,12 +159,46 @@ class LiveSport(Plugin):
 
             icon_sport = tag_a.find('span', {'class': 'sport'}).find('img')[
                 'data-src']
+
+            league = tag_a.find('span', {'class': 'competition'}).text
+
+            if league not in leagues:
+                leagues.append(league)
+                index = leagues.index(league)
+                with open(os.path.join(self.config_dir, 'leagues.pickle'), 'wt') as f:
+                    f.write(pickle.dumps(leagues, 0))
+                sl = self._get_selected_leagues()
+                sl.append(index)
+                self.set_setting('selected_leagues',
+                                 ','.join(str(x) for x in sl))
+            else:
+                if not selected_leagues or not selected_leagues[0]:
+                    self.log('Фильтра нет')
+                else:
+                    if not leagues.index(league) in selected_leagues:
+                        continue
+
+            sport = os.path.basename(urlparse(icon_sport).path).split('.')[0]
+
+            # if sport == u'football':
+            #     icon_sport = os.path.join(self.dir('media'), 'football.png')
+            # elif sport == u'hockey':
+            #     icon_sport = os.path.join(self.dir('media'), 'hockey.png')
+            icon_sport = os.path.join(self.dir('media'), '{}.png'.format(sport))
+
             tag_i = tag_a.find('span', {'class': 'date'}).find('i')
             id_event = int(tag_i['id'].split('-')[1])
 
-            url_links = '{}/engine/modules/sports/sport_refresh.php?' \
-                        'from=event&event_id={}&tab_id=undefined&post_id={}'.format(
-                            self._site, id_event, str(id_))
+            if self._language != 'Russian':
+                url_links = '{}/engine/modules/sports/sport_refresh.php?' \
+                            'from=event&event_id={}&tab_id=undefined&post_id={}&lang=en'.format(
+                                self.get_setting('url_site'), id_event, str(id_))
+            else:
+                url_links = '{}/engine/modules/sports/sport_refresh.php?' \
+                            'from=event&event_id={}&tab_id=undefined&post_id={}'.format(
+                                self._site, id_event, str(id_))
+
+            self.logd('url_links', url_links)
 
             date_naive = tag_i['data-datetime']
             try:
@@ -142,11 +217,10 @@ class LiveSport(Plugin):
             item = listing[id_]
             item['id'] = id_
             item['id_event'] = id_event
-            item['sport'] = os.path.basename(
-                urlparse(icon_sport).path).split('.')[0]
+            item['sport'] = sport
             item['status'] = tag_i.text
             item['label'] = game
-            item['league'] = tag_a.find('span', {'class': 'competition'}).text
+            item['league'] = league
             item['date'] = date_utc
             item['thumb'] = ''
             item['icon'] = icon_sport
@@ -237,10 +311,12 @@ class LiveSport(Plugin):
 
         title = self.get(id, 'label')
         info_mini = self._get_mini_info_math(self.get(id, 'id_event'))
-        plot = u'%s\n%s\n%s\n[B]-------------   %s  :  %s   -------------[/B]' % (self.time_to_local(self.get(id, 'date')).strftime('%d.%m %H:%M'), 
-                                                                                  self.get(id, 'league'),
-                                                                                  self.get(id, 'label'),
-                                                                                  info_mini['scorel'], 
+        plot = u'%s\n%s\n%s\n[B]-------------   %s  :  %s   -------------[/B]' % (self.time_to_local(self.get(id, 'date')).strftime('%d.%m %H:%M'),
+                                                                                  self.get(
+                                                                                      id, 'league'),
+                                                                                  self.get(
+                                                                                      id, 'label'),
+                                                                                  info_mini['scorel'],
                                                                                   info_mini['scorer'])
 
         l = []
@@ -306,18 +382,20 @@ class LiveSport(Plugin):
             return self._get_mini_info_math(id_event, center)
         return None
 
-    def create_listing_sport(self, sport):
-        l = [{'label': '[COLOR FF0084FF][B]ВЫБРАТЬ ТУРНИРЫ[/B][/COLOR]', 'url': self.get_url(action='select_matches')},
-             {'label': '[COLOR FF0084FF][B]ОБНОВИТЬ[/B][/COLOR]', 'url': self.get_url(action='reset_inter')}]
-        return l + self._get_listing(sport=sport)
+    def create_listing_filter(self, params):
+        l = []
+        if params['sort'] != 'offline':
+            l.append({'label': '[UPPERCASE][B][COLOR FF0084FF][{}][/COLOR][/UPPERCASE][/B]'.format(_('Refresh')),
+                'url': self.get_url(action='listing', sort=params['sort'])})
+        return l + self._get_listing(params=params)
 
-
-    def _get_listing(self, sport=None):
+    def _get_listing(self, params=None):
         """
         Возвращаем список для корневой виртуальной папки
         :return:
         """
-
+        filter = params['sort']
+        
         listing = []
 
         now_utc = self.time_now_utc()
@@ -329,10 +407,26 @@ class LiveSport(Plugin):
         try:
             for item in self._listing.values():
 
-                if sport is not None and sport != item['sport']:
+                info_match = self._get_mini_info_math(item['id_event'], center)
+
+                #self.logd('info_match', info_match)
+
+                if not info_match:
+                    self.logd('_get_listing() - not info_match', item['label'])
                     continue
 
-                info_match = self._get_mini_info_math(item['id_event'], center)
+                #self.logd(filter, info_match['status'])
+
+                if not (filter is None or filter == 'all' or filter == 'live' or filter == 'offline'):
+                    if filter != item['sport']:
+                        continue                
+
+                if filter == 'live' and info_match['status'] != u'LIVE':
+                    continue
+                
+                
+                if filter == 'offline' and info_match['status'] != u'OFFLINE':
+                    continue
 
                 status = 'FFFFFFFF'
 
@@ -400,7 +494,7 @@ class LiveSport(Plugin):
                             'title': label,
                         }
                     },
-                    'offscreen': False,
+                    # 'offscreen': False,
                     'is_folder': is_folder,
                     'is_playable': is_playable,
                     'url': get_url,

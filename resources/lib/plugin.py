@@ -53,9 +53,6 @@ class Plugin(simpleplugin.Plugin):
         self._listing = OrderedDict()
         self._language = xbmc.getInfoLabel(
             'System.Language')  # Russian English
-
-        self.log('^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^6 %s' % self._language)
-
         self.load()
 
     @staticmethod

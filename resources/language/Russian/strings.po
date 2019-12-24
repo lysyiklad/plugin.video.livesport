@@ -49,3 +49,15 @@ msgstr "ММА"
 msgctxt "#30009"
 msgid "Live"
 msgstr "Прямой эфир"
+
+msgctxt "#30010"
+msgid "Offline"
+msgstr "Законченные"
+
+msgctxt "#30011"
+msgid "League Choice"
+msgstr "Выбор турнира"
+
+msgctxt "#30012"
+msgid "Refresh"
+msgstr "Обновить"
