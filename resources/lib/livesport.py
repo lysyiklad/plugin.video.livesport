@@ -15,6 +15,7 @@ from dateutil.parser import *
 from dateutil.tz import tzlocal, tzoffset
 
 from plugin import Plugin, _
+from . import makeart
 
 
 # def _upper(t):
@@ -39,7 +40,6 @@ class LiveSport(Plugin):
             self._site = os.path.join(self.get_setting('url_site'), 'en')
         else:
             self._site = self.get_setting('url_site')
-
 
     def create_listing_(self):
         self.update()
@@ -69,13 +69,19 @@ class LiveSport(Plugin):
                     'icon': os.path.join(self.dir('media'), 'american_football.png'),
                     'url': self.get_url(action='listing', sort='american_football')},
                    {'label': '[UPPERCASE][B]{}[/B][/UPPERCASE]'.format(_('Race')),
-                   'icon': os.path.join(self.dir('media'), 'race.png'),
+                    'icon': os.path.join(self.dir('media'), 'race.png'),
                     'url': self.get_url(action='listing', sort='race')},
                    {'label': '[UPPERCASE][B]{}[/B][/UPPERCASE]'.format(_('Boxing')),
                     'icon': os.path.join(self.dir('media'), 'boxing.png'),
-                    'url': self.get_url(action='listing', sort='boxing')},                   
+                    'url': self.get_url(action='listing', sort='boxing')},
                    ]
         return listing
+        # return self.create_listing(listing,
+        #                     content='movies',
+        #                        view_mode=55,
+        #                     #    sort_methods=(
+        #                     #        xbmcplugin.SORT_METHOD_DATEADDED, xbmcplugin.SORT_METHOD_VIDEO_RATING),
+        #                     cache_to_disk=False)
 
     def _load_leagues(self):
         file_pickle = os.path.join(self.config_dir, 'leagues.pickle')
@@ -137,7 +143,6 @@ class LiveSport(Plugin):
                         }
                     }
         """
-        i = 1
         leagues = self._load_leagues()
         selected_leagues = self._get_selected_leagues()
 
@@ -180,11 +185,8 @@ class LiveSport(Plugin):
 
             sport = os.path.basename(urlparse(icon_sport).path).split('.')[0]
 
-            # if sport == u'football':
-            #     icon_sport = os.path.join(self.dir('media'), 'football.png')
-            # elif sport == u'hockey':
-            #     icon_sport = os.path.join(self.dir('media'), 'hockey.png')
-            icon_sport = os.path.join(self.dir('media'), '{}.png'.format(sport))
+            icon_sport = os.path.join(
+                self.dir('media'), '{}.png'.format(sport))
 
             tag_i = tag_a.find('span', {'class': 'date'}).find('i')
             id_event = int(tag_i['id'].split('-')[1])
@@ -212,6 +214,56 @@ class LiveSport(Plugin):
             tags_div = tag_a.find(
                 'div', {'class': 'commands commands_match_center'}).findAll('div')
 
+            icon1 = tags_div[1].contents[1]['data-src'].replace('?18x18=1', '')
+            command1 = tags_div[0].text
+            icon2 = tags_div[1].contents[3]['data-src'].replace('?18x18=1', '')
+            command2 = tags_div[2].text
+
+            poster = ''
+            thumb = ''
+            fanart = ''
+
+            if True:    #self.is_create_artwork():
+                art = makeart.ArtWorkFootBall(self,
+                                                id=id_,
+                                                date=self.time_to_local(date_utc),
+                                                league=league,
+                                                home=command1,
+                                                away=command2,
+                                                logo_home=icon1,
+                                                logo_away=icon2)
+
+                #theme_artwork = self.get_setting('theme_artwork')
+
+                # if theme_artwork == 0:
+                #     art.set_light_theme()
+                # elif theme_artwork == 1:
+                #     art.set_dark_theme()
+                # elif theme_artwork == 2:
+                #     art.set_blue_theme()
+                # elif theme_artwork == 3:
+                #     art.set_transparent_theme()
+                # else:
+                #     self.logd('_parse_listing',
+                #                 'error set artwork theme')
+                #     art.set_light_theme()
+                art.set_transparent_theme()
+
+                # if self.get_setting('is_thumb'):
+                #     thumb = art.create_thumb()
+                #     self.logd('_parse_listing', thumb)
+                # if self.get_setting('is_fanart'):
+                #     fanart = art.create_fanart()
+                #     self.logd('_parse_listing', fanart)
+                # if self.get_setting('is_poster'):
+                #     poster = art.create_poster()
+                #     self.logd('_parse_listing', poster)
+                thumb = art.create_fanart()
+
+
+            self.logd(
+                'parse_listing', 'ADD MATCH - %s - %s' % (self.time_to_local(date_utc), game))
+
             if id_ not in listing:
                 listing[id_] = {}
             item = listing[id_]
@@ -222,23 +274,22 @@ class LiveSport(Plugin):
             item['label'] = game
             item['league'] = league
             item['date'] = date_utc
-            item['thumb'] = ''
-            item['icon'] = icon_sport
-            item['poster'] = ''
-            item['fanart'] = self.fanart
-            item['icon1'] = tags_div[1].contents[1]['data-src'].replace(
-                '?18x18=1', '')
-            item['command1'] = tags_div[0].text
-            item['icon2'] = tags_div[1].contents[3]['data-src'].replace(
-                '?18x18=1', '')
-            item['command2'] = tags_div[2].text
+            item['thumb'] = thumb
+            item['icon'] = thumb
+            item['poster'] = poster
+            item['fanart'] = fanart
+            item['icon1'] = icon1
+            item['command1'] = command1
+            item['icon2'] = icon2
+            item['command2'] = command2
 
             item['url_links'] = url_links
             if 'href' is not item:
                 item['href'] = []
 
-            self.logd(i, item)
             i += 1
+            if progress:
+                progress.update(i, message=game)
 
         return listing
 
@@ -326,6 +377,7 @@ class LiveSport(Plugin):
             if self.get(id, 'status') == u'OFFLINE' or 'href' not in link:
                 l.append({'label': link['label'],
                           'info': {'video': {'title': title, 'plot': plot}},
+                          'icon': self.get(id, 'icon'),
                           'url': '',
                           'is_playable': False,
                           'is_folder': False})
@@ -386,7 +438,7 @@ class LiveSport(Plugin):
         l = []
         if params['sort'] != 'offline':
             l.append({'label': '[UPPERCASE][B][COLOR FF0084FF][{}][/COLOR][/UPPERCASE][/B]'.format(_('Refresh')),
-                'url': self.get_url(action='listing', sort=params['sort'])})
+                      'url': self.get_url(action='listing', sort=params['sort'])})
         return l + self._get_listing(params=params)
 
     def _get_listing(self, params=None):
@@ -395,7 +447,7 @@ class LiveSport(Plugin):
         :return:
         """
         filter = params['sort']
-        
+
         listing = []
 
         now_utc = self.time_now_utc()
@@ -419,12 +471,11 @@ class LiveSport(Plugin):
 
                 if not (filter is None or filter == 'all' or filter == 'live' or filter == 'offline'):
                     if filter != item['sport']:
-                        continue                
+                        continue
 
                 if filter == 'live' and info_match['status'] != u'LIVE':
                     continue
-                
-                
+
                 if filter == 'offline' and info_match['status'] != u'OFFLINE':
                     continue
 
@@ -474,10 +525,6 @@ class LiveSport(Plugin):
                     item['id'], href)
 
                 icon = item['icon']
-
-                # for league_pictures in self.league_image:
-                #     if league_pictures['league'] == item['league']:
-                #         icon = league_pictures['src']
 
                 listing.append({
                     'label': label,
