@@ -122,6 +122,22 @@ msgctxt "#30027"
 msgid "After"
 msgstr "Через"
 
+msgctxt "#30028"
+msgid "STATISTICS:"
+msgstr "СТАТИСТИКА:"
+
+msgctxt "#30029"
+msgid "BROADCASTS:"
+msgstr "ТРАНСЛЯЦИИ:"
+
+msgctxt "#30030"
+msgid "REVIEWS:"
+msgstr "ОБЗОР:"
+
+msgctxt "#30031"
+msgid "GOAL"
+msgstr "ГОЛ"
+
 
 
 

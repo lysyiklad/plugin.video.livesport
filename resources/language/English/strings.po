@@ -122,12 +122,21 @@ msgctxt "#30027"
 msgid "After"
 msgstr ""
 
+msgctxt "#30028"
+msgid "STATISTICS:"
+msgstr ""
 
+msgctxt "#30029"
+msgid "BROADCASTS:"
+msgstr ""
 
+msgctxt "#30030"
+msgid "REVIEWS:"
+msgstr ""
 
-
-
-
+msgctxt "#30031"
+msgid "GOAL"
+msgstr ""
 
 
 

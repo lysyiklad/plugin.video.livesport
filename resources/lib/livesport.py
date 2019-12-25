@@ -181,14 +181,14 @@ class LiveSport(simpleplugin.Plugin):
         if not links or not self.date_scan or tsn > self.get_setting('delta_scan') or (tsn > dt and tnd < dt):
             self.logd('links - id - %s : time now date - %s time scan now - %s' %
                       (id, tnd, tsn), links)
-            if links and links[0].get('status', None) is not None and links[0].get('status', None) == 'OFFLINE':
-                return links
+            # if links and links[0].get('status', None) is not None and links[0].get('status', None) == 'OFFLINE':
+            #     return links
             html = self.http_get(self.get(id, 'url_links'))
             if not html:
                 self.logd('links', 'not html')
                 return links
             del links[:]
-            links.extend(self._parse_links(html))
+            links.extend(self._parse_links(id, html))
             if links and isdump:
                 self.dump()
 
@@ -881,7 +881,7 @@ class LiveSport(simpleplugin.Plugin):
 
         return listing
 
-    def _parse_links(self, html):
+    def _parse_links(self, id, html):
         """
         Парсим страницу для списка ссылок
         :param html:
@@ -901,7 +901,10 @@ class LiveSport(simpleplugin.Plugin):
         broadcast = data.get('broadcast', None)
 
         if broadcast is not None:
-
+            links.append({
+                'label': u'[COLOR FF0084FF][B]{}[/B][/COLOR]'.format(_('BROADCASTS:').decode('utf-8')),
+                'status': 'title'
+            })
             tag_broadcast = bs4.BeautifulSoup(broadcast, 'html.parser')
 
             tag_li = tag_broadcast.findAll('li')
@@ -917,6 +920,7 @@ class LiveSport(simpleplugin.Plugin):
                     tag_img = tr.find('img')
                     links.append(
                         {
+                            'status': 'broadcast',
                             'icon': tag_img['src'],
                             'lang': tag_img['title'],
                             'speed': td_class_text(tr, 'speed'),
@@ -926,19 +930,65 @@ class LiveSport(simpleplugin.Plugin):
                             'href': tr.find('a')['href'],
                         }
                     )
-        else:
-            eventsstat = data.get('eventsstat', None)
-            if eventsstat is not None:
-                content = eventsstat[0].get('content', None)
-                if content is not None:
-                    tag_content = bs4.BeautifulSoup(content, 'html.parser')
-                    if tag_content:
-                        for tabl in tag_content.findAll('table'):
-                            tags_td = tabl.findAll('td')
-                            links.append({
-                                'label': u'{}   {}   {}'.format(tags_td[0].text, tags_td[2].text, tags_td[4].text),
-                                'status': 'OFFLINE'
-                            })
+        reviews = data.get('reviews', None)
+        if reviews is not None:
+            links.append({
+                'label': u'[COLOR FF0084FF][B]{}[/B][/COLOR]'.format(_('REVIEWS:').decode('utf-8')),
+                'status': 'title'
+            })
+            home = self.get(id, 'command1')
+            guest = self.get(id, 'command2')
+            tag_reviews = bs4.BeautifulSoup(reviews, 'html.parser')
+            for li in tag_reviews.findAll('li'):
+                class_ = li['class'][0]
+                #print class_
+                if class_ == u'supermain':
+                    #print li.text
+                    links.append({
+                        'label': u'[B]{}[/B]'.format(li.text),
+                        'status': 'info'
+                    })
+                else:
+                    if class_ == 'match_review_left':
+                        link = u'{}'.format(home.strip())
+                    else:
+                        link = u'{}'.format(guest.strip())
+                    div = li.find('div')
+                    spans = div.findAll('span')
+                    for s in spans:
+                        txt = u''
+                        #print s['class']
+                        if len(s['class']) == 2:
+                            if s['class'][0] == u'icon':
+                                if s['class'][1] == u'block-time':
+                                    #           print s['title']
+                                    txt = s['title']
+                                elif s['class'][1].find('ball') != -1:
+                                    txt = u'[COLOR FFFF0000][B]{}[/B][/COLOR]'.format(
+                                        _('GOAL').decode('utf-8'))
+                        else:
+                            txt = s.text
+                        link = link + u' |  ' + txt
+                    links.append({
+                        'label': link,
+                        'status': 'info'
+                    })
+        eventsstat = data.get('eventsstat', None)
+        if eventsstat is not None:
+            links.append({
+                'label': u'[COLOR FF0084FF][B]{}[/B][/COLOR]'.format(_('STATISTICS:').decode('utf-8')),
+                'status': 'title'
+            })
+            content = eventsstat[0].get('content', None)
+            if content is not None:
+                tag_content = bs4.BeautifulSoup(content, 'html.parser')
+                if tag_content:
+                    for tabl in tag_content.findAll('table'):
+                        tags_td = tabl.findAll('td')
+                        links.append({
+                            'label': u'{}  -  {}  -  {}'.format(tags_td[0].text, tags_td[2].text, tags_td[4].text),
+                            'status': 'info'
+                        })
 
         return links
 
@@ -951,26 +1001,26 @@ class LiveSport(simpleplugin.Plugin):
 
         title = self.get(id, 'label')
         info_mini = self._get_mini_info_math(self.get(id, 'id_event'))
-        plot = u'%s\n%s\n%s\n[B]-------------   %s  :  %s   -------------[/B]' % (self.time_to_local(self.get(id, 'date')).strftime('%d.%m %H:%M'),
+        plot = u'%s\n%s\n%s\n[B]                  %s  :  %s[/B]' % (self.time_to_local(self.get(id, 'date')).strftime('%d.%m %H:%M'),
                                                                                   self.get(
                                                                                       id, 'league'),
                                                                                   self.get(
                                                                                       id, 'label'),
                                                                                   info_mini['scorel'],
-                                                                                  info_mini['scorer'])
+                                                                                  info_mini['scorer']
+                                                                                  )
 
         l = []
 
-        for link in links:
+        l.append({'label': u'[B]{}    {} : {}    {} [/B]'.format(self.get(id, 'command1'), info_mini['scorel'], info_mini['scorer'], self.get(id, 'command2')),
+                  'info': {'video': {'title': title, 'plot': plot}},
+                  'icon': self.get(id, 'icon'),
+                  'url': '',
+                  'is_playable': False,
+                  'is_folder': False})
 
-            if self.get(id, 'status') == u'OFFLINE' or 'href' not in link:
-                l.append({'label': link['label'],
-                          'info': {'video': {'title': title, 'plot': plot}},
-                          'icon': self.get(id, 'icon'),
-                          'url': '',
-                          'is_playable': False,
-                          'is_folder': False})
-            else:
+        for link in links:
+            if link['status'] == u'broadcast':
                 urlprs = urlparse(link['href'])
 
                 if urlprs.scheme == 'acestream':
@@ -997,6 +1047,13 @@ class LiveSport(simpleplugin.Plugin):
                           'art': {'icon': icon, 'thumb': icon, },
                           'url': self.get_url(action='play', href=link['href'], id=id),
                           'is_playable': True})
+            else:
+                l.append({'label': link['label'],
+                          'info': {'video': {'title': title, 'plot': plot}},
+                          'icon': self.get(id, 'icon'),
+                          'url': '',
+                          'is_playable': False,
+                          'is_folder': False})
 
         return l
 
