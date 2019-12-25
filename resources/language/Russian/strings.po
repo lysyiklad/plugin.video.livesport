@@ -61,3 +61,70 @@ msgstr "Выбор турнира"
 msgctxt "#30012"
 msgid "Refresh"
 msgstr "Обновить"
+
+msgctxt "#30013"
+msgid "UPDATE DATA ..."
+msgstr "ОБНОВЛЕНИЕ ДАННЫХ ..."
+
+msgctxt "#30014"
+msgid "Loading site data ..."
+msgstr "Загрузка данных сайта..."
+
+msgctxt "#30015"
+msgid "Changing settings ..."
+msgstr "Изменение настроек..."
+
+msgctxt "#30016"
+msgid "Stream information will be available 30 minutes prior to the begining of an event.""
+msgstr "Информация о трансляциях станет доступна за 30 минут до начала матча."
+
+msgctxt "#30017"
+msgid "link scanning"
+msgstr "сканирование ссылок"
+
+msgctxt "#30018"
+msgid "End update..."
+msgstr "Конец обновлений..."
+
+msgctxt "#30019"
+msgid "Resource Unavailable or Invalid!"
+msgstr "Ресурс недоступен или недействителен!"
+
+msgctxt "#30020"
+msgid "Torrent not available or invalid!"
+msgstr "Торрент недоступен или недействителен!"
+
+msgctxt "#30021"
+msgid "wait..."
+msgstr "ожидание..."
+
+msgctxt "#30022"
+msgid "playback..."
+msgstr "воспроизведение..."
+
+msgctxt "#30023"
+msgid "prebuffering..."
+msgstr "пребуферизация..."
+
+msgctxt "#30024"
+msgid "Plugin reset..."
+msgstr "Сброс данных плагина..."
+
+msgctxt "#30025"
+msgid "Choosing a Sports Tournament"
+msgstr "Выбор спортивного турнира"
+
+msgctxt "#30026"
+msgid "Plexus plugin required to view SopCast"
+msgstr "Для просмотра SopCast необходим плагин Plexus"
+
+msgctxt "#30027"
+msgid "After"
+msgstr "Через"
+
+
+
+
+
+
+
