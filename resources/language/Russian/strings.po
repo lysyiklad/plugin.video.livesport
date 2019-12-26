@@ -10,6 +10,42 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Language: ru\n"
 
+msgctxt "#10000"
+msgid "Site time zone"
+msgstr "Часовой пояс сайта"
+
+msgctxt "#10001"
+msgid "Do not show offline matches in categories"
+msgstr "Не показывать в категориях прошедшие матчи"
+
+msgctxt "#10002"
+msgid "Create thumbnails"
+msgstr "Создавать миниатюры"
+
+msgctxt "#10003"
+msgid "Data update period, min."
+msgstr "Период обновления данных, мин."
+
+msgctxt "#10004"
+msgid "Server settings"
+msgstr "Настройки сервера"
+
+msgctxt "#10005"
+msgid "For the service settings to take effect, you must restart Kodi !"
+msgstr "Чтобы настройки службы вступили в силу, необходимо перезапустить Kodi!"
+
+msgctxt "#10006"
+msgid "Enable background data refresh"
+msgstr "Включить обновление данных в фоновом режиме"
+
+msgctxt "#10007"
+msgid "Update period in the background, min."
+msgstr "Период обновления в фоновом режиме, мин."
+
+
+
+
+
 msgctxt "#30000"
 msgid "All"
 msgstr "Все"

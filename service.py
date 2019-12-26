@@ -48,9 +48,9 @@ class Monitor(xbmc.Monitor):
 if __name__ == "__main__":
     monitor = Monitor()
     while not monitor.abortRequested():
-        if not xbmc.Player().isPlaying():
-            plugin.log('START SERVICE!')
+        if not xbmc.Player().isPlaying() and plugin.get_setting('is_update_service'):
+            plugin.log('START BACKGROUND DATA UPDATE!')
             plugin.update()
-            plugin.log('STOP SERVICE!')
+            plugin.log('STOP BACKGROUND DATA UPDATE!')
         if monitor.waitForAbort(plugin.get_setting('scan_service') * 60):
             break

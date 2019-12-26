@@ -9,7 +9,7 @@ plugin = LiveSport()
 
 @plugin.action()
 def root(params):
-    return plugin.create_listing_()
+    return plugin.create_listing_categories()
 
 
 @plugin.action()

@@ -48,26 +48,94 @@ american_football = """
 
 """
 
-#print reviews.encode('utf-8')
-home = u'ХК Нефтехимик'
+football = """
+<li class="supermain"><p>1-й тайм (0:1)</p></li>
+<li class="match_review_right"><div><span class="number">30'</span><span class="icon y-card">&nbsp;</span><span class="name">(Фол) Берн Д.</span></div></li>
+<li class="match_review_left"><div><span class="number">36'</span><span class="icon y-card">&nbsp;</span><span class="name">Уинкс Г. (Подножка)</span></div></li>
+<li class="match_review_right"><div><span class="number">37'</span><span class="icon goal">&nbsp;</span><span class="name"> (Гросс П.) Webster A.</span></div></li>
+<li class="match_review_left"><div><span class="number">39'</span><span class="icon y-card">&nbsp;</span><span class="name">Санчес Д. (Задержка)</span></div></li>
+<li class="match_review_right"><div><span class="number">42'</span><span class="icon y-card">&nbsp;</span><span class="name">(Задержка) Гросс П.</span></div></li>
+<li class="supermain"><p>2-й тайм (2:0)</p></li>
+<li class="match_review_left"><div><span class="number">53'</span><span class="icon goal">&nbsp;</span><span class="name">Кейн Х.</span></div></li>
+<li class="match_review_left"><div><span class="number">56'</span><span class="name">Ло Селсо Дж.</span><span class="icon up">&nbsp;</span><span class="name"> Сессеньон Р.</span><span class="icon down">&nbsp;</span></div></li>
+<li class="match_review_right"><div><span class="number">68'</span><span class="name">Мопей Н.</span><span class="icon up">&nbsp;</span><span class="name">Конноли А. </span><span class="icon down">&nbsp;</span></div></li>
+<li class="match_review_left"><div><span class="number">68'</span><span class="name">Эриксен К.</span><span class="icon up">&nbsp;</span><span class="name"> Уинкс Г.</span><span class="icon down">&nbsp;</span></div></li>
+<li class="match_review_left"><div><span class="number">72'</span><span class="icon goal">&nbsp;</span><span class="name">Алли Д. (Орье С.) </span></div></li>
+<li class="match_review_left"><div><span class="number">74'</span><span class="icon y-card">&nbsp;</span><span class="name">Лукас (Грубая игра)</span></div></li>
+<li class="match_review_left"><div><span class="number">76'</span><span class="name">Дайер Э.</span><span class="icon up">&nbsp;</span><span class="name"> Лукас</span><span class="icon down">&nbsp;</span></div></li>
+<li class="match_review_right"><div><span class="number">76'</span><span class="name">Троссард Л.</span><span class="icon up">&nbsp;</span><span class="name">Бернардо </span><span class="icon down">&nbsp;</span></div></li>
+<li class="match_review_right"><div><span class="number">83'</span><span class="name">Биссума И.</span><span class="icon up">&nbsp;</span><span class="name">Скелотто Э. </span><span class="icon down">&nbsp;</span></div></li>
+<li class="match_review_left"><div><span class="number">84'</span><span class="icon y-card">&nbsp;</span><span class="name">Сиссоко М. (Фол)</span></div></li>
+"""
+
+"""
+<li class="match_review_right">
+    <div>
+        <span class="number">30'</span>
+        <span class="icon y-card">&nbsp;</span>
+        <span class="name">(Фол) Берн Д.</span>
+    </div>
+</li>
+<li class="match_review_left">
+    <div>
+        <span class="number">56'</span>
+        <span class="name">Ло Селсо Дж.</span>
+        <span class="icon up">&nbsp;</span>
+        <span class="name"> Сессеньон Р.</span>
+        <span class="icon down">&nbsp;</span>
+    </div>
+</li>
+"""
+
+# #print reviews.encode('utf-8')
+home = u'ХК Нефтехимикааааа'
 guest = u'ХК Ак Барс'
 
-print len(home)
-# print len(home.encode('utf-8'))
+# print len(home)
+# # print len(home.encode('utf-8'))
 
-print len(guest)
+# print len(guest)
+# # print len(guest.encode('utf-8'))
+
+# OBREZ = 20
+
+
+def fu(txt, column_width):
+    txt = txt.strip()
+    result = u'{1:<{0:}}|'.format(
+        column_width, txt[:column_width] if len(txt) > column_width else txt)
+    #print result.encode('utf-8')
+    print len(result.encode('utf-8'))
+    return result
+
+
+# def f(txt, column_width):
+#     txt = txt.encode('utf-8')
+#     txt = txt.strip()
+#     result = '{1:<{0:}}|'.format(
+#         column_width, txt[:column_width] if len(txt) > column_width else txt)
+#     print result
+#     print len(result)
+#     return result
+
+
+# print len(home.encode('utf-8'))
 # print len(guest.encode('utf-8'))
 
-OBREZ = 20
+print len(home)
+print len(guest)
 
+lh = len(home)
+lg = len(guest)
 
-def format_str_column_width(txt, column_width):
-    return u'{1:*<{0:}}|'.format(column_width, txt[:column_width] if len(txt) > column_width else txt)
+column_width_home = lh if lh >= lg else 2*lg - lh + 1
+column_width_guest = lg if lg >= lh else 2*lh - lg + 1
 
+print fu(home, column_width_home).encode('utf-8')
+print fu(guest, column_width_guest).encode('utf-8')
 
-print format_str_column_width(home, 20).encode('utf-8')
-print format_str_column_width(guest, 20).encode('utf-8')
-
+# print f(home, 30)
+# print f(guest, 30)
 
 # links = []
 
@@ -88,21 +156,36 @@ print format_str_column_width(guest, 20).encode('utf-8')
 #             link = u'{:<20}'.format(guest)
 #         div = li.find('div')
 #         spans = div.findAll('span')
-#         for s in spans:
-#             txt = u''
+#         up_down = u''
+#         name = u''
+#         number = u''
+#         icon = u''
+#         for s in spans:            
 #             #print s['class']
 #             if len(s['class']) == 2:
 #                 if s['class'][0] == u'icon':
 #                     if s['class'][1] == u'block-time':
 #              #           print s['title']
-#                         txt = s['title']
-#                     elif s['class'][1].find('ball') != -1:
-#                         txt = u'ГОЛ!'
+#                         icon = s['title']
+#                     elif s['class'][1].find('ball') != -1 or s['class'][1] == 'goal':
+#                         icon = u'ГОЛ!'
+#                     elif s['class'][1] == u'y-card':
+#                         icon = u'Желтая карточка'
+#                     elif s['class'][1] == u'up':
+#                         up_down = name + u'(вышел)'
+#                         name = u''
+#                     elif s['class'][1] == u'down':
+#                         icon = up_down + name + u'(ушел)'
+#                         up_down = u''
+#                         name = u''            
 #             else:
-#                 txt = s.text
-#             link = link + u' |  ' + txt
+#                 if s['class'][0] == u'name':
+#                     name = s.text
+#                 elif s['class'][0] == u'number':
+#                     number = s.text
+#         link = link + u' |  ' + number + u' | ' + icon + u' | ' + name
+#         print link.encode('utf-8')
 #         links.append(link)
-#         print link
 
 
 #print tag_reviews
