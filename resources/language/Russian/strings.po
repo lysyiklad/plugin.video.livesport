@@ -75,7 +75,7 @@ msgid "Changing settings ..."
 msgstr "Изменение настроек..."
 
 msgctxt "#30016"
-msgid "Stream information will be available 30 minutes prior to the begining of an event.""
+msgid "Stream information will be available 30 minutes prior to the begining of an event."
 msgstr "Информация о трансляциях станет доступна за 30 минут до начала матча."
 
 msgctxt "#30017"

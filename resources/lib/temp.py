@@ -49,43 +49,60 @@ american_football = """
 """
 
 #print reviews.encode('utf-8')
-home = u'Шахтер7890123456789012345'
-guest = u'Динамо'
+home = u'ХК Нефтехимик'
+guest = u'ХК Ак Барс'
 
-links = []
+print len(home)
+# print len(home.encode('utf-8'))
 
-tag_reviews = bs4.BeautifulSoup(hockey, 'html.parser')
+print len(guest)
+# print len(guest.encode('utf-8'))
 
-lis = tag_reviews.findAll('li')
+OBREZ = 20
 
-for li in tag_reviews.findAll('li'):
-    class_ = li['class'][0]
-    #print class_
-    if class_ == u'supermain':
-        #print li.text
-        links.append(li.text)
-    else:
-        if class_ == 'match_review_left':            
-            link = u'{:<20}'.format(home)
-        else:
-            link = u'{:<20}'.format(guest)
-        div = li.find('div')
-        spans = div.findAll('span')
-        for s in spans:
-            txt = u''
-            #print s['class']
-            if len(s['class']) == 2:
-                if s['class'][0] == u'icon':
-                    if s['class'][1] == u'block-time':
-             #           print s['title']
-                        txt = s['title']
-                    elif s['class'][1].find('ball') != -1:
-                        txt = u'ГОЛ!'
-            else:
-                txt = s.text
-            link = link + u' |  ' + txt
-        links.append(link)
-        print link
+
+def format_str_column_width(txt, column_width):
+    return u'{1:*<{0:}}|'.format(column_width, txt[:column_width] if len(txt) > column_width else txt)
+
+
+print format_str_column_width(home, 20).encode('utf-8')
+print format_str_column_width(guest, 20).encode('utf-8')
+
+
+# links = []
+
+# tag_reviews = bs4.BeautifulSoup(hockey, 'html.parser')
+
+# lis = tag_reviews.findAll('li')
+
+# for li in tag_reviews.findAll('li'):
+#     class_ = li['class'][0]
+#     #print class_
+#     if class_ == u'supermain':
+#         #print li.text
+#         links.append(li.text)
+#     else:
+#         if class_ == 'match_review_left':            
+#             link = u'{:<20}'.format(home)
+#         else:
+#             link = u'{:<20}'.format(guest)
+#         div = li.find('div')
+#         spans = div.findAll('span')
+#         for s in spans:
+#             txt = u''
+#             #print s['class']
+#             if len(s['class']) == 2:
+#                 if s['class'][0] == u'icon':
+#                     if s['class'][1] == u'block-time':
+#              #           print s['title']
+#                         txt = s['title']
+#                     elif s['class'][1].find('ball') != -1:
+#                         txt = u'ГОЛ!'
+#             else:
+#                 txt = s.text
+#             link = link + u' |  ' + txt
+#         links.append(link)
+#         print link
 
 
 #print tag_reviews

@@ -152,15 +152,7 @@ class LiveSport(simpleplugin.Plugin):
         """
         id = int(params['id'])
         links = self.links(id, isdump=True)
-        self.logd('links', links)
-
-        if not links:
-            return [{'label': _('Stream information will be available 30 minutes prior to the begining of an event.'),
-                     'info': {'video': {'title': self._site, 'plot': self._site}},
-                     'art': {'icon': self.icon, 'thumb': self.icon, },
-                     'url': self.get_url(action='play',
-                                         href=URL_NOT_LINKS),
-                     'is_playable': True}]
+        self.logd('links', links)    
 
         return self._get_links(id, links)
 
@@ -760,7 +752,9 @@ class LiveSport(simpleplugin.Plugin):
         tag_matchs = soup.findAll(
             'li', {'itemtype': 'http://data-vocabulary.org/Event'})
 
-        i = 1
+        total = len(tag_matchs)
+        still = len(tag_matchs)
+        fill = 0
 
         for tag_match in tag_matchs:
 
@@ -788,6 +782,7 @@ class LiveSport(simpleplugin.Plugin):
                     self.log('no filter sports tournament')
                 else:
                     if not leagues.index(league) in selected_leagues:
+                        still = still - 1
                         continue
 
             sport = os.path.basename(urlparse(icon_sport).path).split('.')[0]
@@ -830,10 +825,10 @@ class LiveSport(simpleplugin.Plugin):
             thumb = ''
             fanart = ''
 
-            self.log('_parse_listing - self.get_setting %s' %
-                     self.get_setting('is_thumb', convert=True))
-            self.log('_parse_listing - xbmcaddon.Addon().getSetting %s' %
-                     xbmcaddon.Addon().getSetting('is_thumb'))
+            # self.log('_parse_listing - self.get_setting %s' %
+            #          self.get_setting('is_thumb', convert=True))
+            # self.log('_parse_listing - xbmcaddon.Addon().getSetting %s' %
+            #          xbmcaddon.Addon().getSetting('is_thumb'))
 
             if self.get_setting('is_thumb', convert=True):
                 art = makeart.ArtWorkFootBall(self,
@@ -874,12 +869,21 @@ class LiveSport(simpleplugin.Plugin):
             item['url_links'] = url_links
             if 'href' is not item:
                 item['href'] = []
-
-            i += 1
+            
             if progress:
-                progress.update(i, message=game)
+                still = still - 1
+                fill = 100 - int(100*float(still)/total)
+                progress.update(fill, message=game)
 
         return listing
+
+    @staticmethod
+    def format_str_column_width(txt, column_width):
+        txt = txt.strip()
+        result = u'{1:<{0:}}'.format(column_width, txt[:column_width] if len(txt) > column_width else txt)
+        print result.encode('utf-8')
+        return result
+
 
     def _parse_links(self, id, html):
         """
@@ -950,12 +954,12 @@ class LiveSport(simpleplugin.Plugin):
                     })
                 else:
                     if class_ == 'match_review_left':
-                        link = u'{}'.format(home.strip())
+                        link = self.format_str_column_width(home, 20)
                     else:
-                        link = u'{}'.format(guest.strip())
+                        link = self.format_str_column_width(guest, 20)
                     div = li.find('div')
                     spans = div.findAll('span')
-                    for s in spans:
+                    for i, s in enumerate(spans):
                         txt = u''
                         #print s['class']
                         if len(s['class']) == 2:
@@ -968,7 +972,7 @@ class LiveSport(simpleplugin.Plugin):
                                         _('GOAL').decode('utf-8'))
                         else:
                             txt = s.text
-                        link = link + u' |  ' + txt
+                        link = link + u' | ' + txt
                     links.append({
                         'label': link,
                         'status': 'info'
@@ -986,7 +990,9 @@ class LiveSport(simpleplugin.Plugin):
                     for tabl in tag_content.findAll('table'):
                         tags_td = tabl.findAll('td')
                         links.append({
-                            'label': u'{}  -  {}  -  {}'.format(tags_td[0].text, tags_td[2].text, tags_td[4].text),
+                            'label': u'{}  -   {}   -  {}'.format(tags_td[0].text, 
+                                                                tags_td[2].text,
+                                                                tags_td[4].text),
                             'status': 'info'
                         })
 
@@ -1001,7 +1007,7 @@ class LiveSport(simpleplugin.Plugin):
 
         title = self.get(id, 'label')
         info_mini = self._get_mini_info_math(self.get(id, 'id_event'))
-        plot = u'%s\n%s\n%s\n[B]                  %s  :  %s[/B]' % (self.time_to_local(self.get(id, 'date')).strftime('%d.%m %H:%M'),
+        plot = u'%s\n%s\n%s\n\n[B]                  %s  :  %s[/B]' % (self.time_to_local(self.get(id, 'date')).strftime('%d.%m %H:%M'),
                                                                                   self.get(
                                                                                       id, 'league'),
                                                                                   self.get(
@@ -1011,6 +1017,14 @@ class LiveSport(simpleplugin.Plugin):
                                                                                   )
 
         l = []
+
+        l.append({'label': u'{}       {}'.format(self.time_to_local(self.get(id, 'date')).strftime('%d.%m %H:%M'),
+                                                     self.get(id, 'league')),
+                  'info': {'video': {'title': title, 'plot': plot}},
+                  'icon': self.get(id, 'icon'),
+                  'url': '',
+                  'is_playable': False,
+                  'is_folder': False})
 
         l.append({'label': u'[B]{}    {} : {}    {} [/B]'.format(self.get(id, 'command1'), info_mini['scorel'], info_mini['scorer'], self.get(id, 'command2')),
                   'info': {'video': {'title': title, 'plot': plot}},
@@ -1054,6 +1068,13 @@ class LiveSport(simpleplugin.Plugin):
                           'url': '',
                           'is_playable': False,
                           'is_folder': False})
+
+        if len(l) == 3:
+            l.append({'label': _('Stream information will be available 30 minutes prior to the begining of an event.'),
+                    'info': {'video': {'title': self._site, 'plot': self._site}},
+                    'art': {'icon': self.icon, 'thumb': self.icon, },
+                    'url': self.get_url(action='play', href=URL_NOT_LINKS),
+                    'is_playable': True})
 
         return l
 
@@ -1164,7 +1185,7 @@ class LiveSport(simpleplugin.Plugin):
                     status, self.time_to_local(date_).strftime('%d.%m %H:%M'), item['label'], item['league'])
 
                 if info_match is not None and (info_match['status'] == u'OFFLINE' or info_match['status'] == u'LIVE'):
-                    lab = u'{} - {}  {}'.format(
+                    lab = u'[B]{} - {}[/B]  {}'.format(
                         info_match['scorel'], info_match['scorer'], info_match['status'])
                     if info_match['status'] == 'OFFLINE':
                         status = 'FF999999'
