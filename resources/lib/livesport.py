@@ -225,7 +225,7 @@ class LiveSport(simpleplugin.Plugin):
 
         self.log('START UPDATE')
 
-        progress.update(10, message=_('Loading site data ...'))
+        progress.update(1, message=_('Loading site data ...'))
 
         #file_html = os.path.join(self.path, 'livesport.html')
 
@@ -774,7 +774,7 @@ class LiveSport(simpleplugin.Plugin):
             'li', {'itemtype': 'http://data-vocabulary.org/Event'})
 
         total = len(tag_matchs)
-        still = len(tag_matchs)
+        still = total
         fill = 0
 
         for tag_match in tag_matchs:
@@ -844,12 +844,9 @@ class LiveSport(simpleplugin.Plugin):
 
             poster = ''
             thumb = ''
-            fanart = ''
+            fanart = os.path.join(self.dir('media'), 'fanart_{}.jpg'.format(sport))
 
-            # self.log('_parse_listing - self.get_setting %s' %
-            #          self.get_setting('is_thumb', convert=True))
-            # self.log('_parse_listing - xbmcaddon.Addon().getSetting %s' %
-            #          xbmcaddon.Addon().getSetting('is_thumb'))
+            self.log('_parse_listing - fanart %s' % fanart)
 
             if self.get_setting('is_thumb', convert=True):
                 art = makeart.ArtWorkFootBall(self,
@@ -1003,22 +1000,22 @@ class LiveSport(simpleplugin.Plugin):
                         if len(s['class']) == 2:
                             if s['class'][0] == u'icon':
                                 if s['class'][1] == u'block-time':
-                                    #           print s['title']
-                                    icon = s['title']
+                                    icon = u'[COLOR FFFFFF00][B][ {} ][/B][/COLOR]'.format(s.text)
                                 elif s['class'][1].find('ball') != -1 or s['class'][1] == 'goal':
                                     icon = u'[COLOR FFFF0000][B]{}[/B][/COLOR]'.format(
                                         _('GOAL').decode('utf-8'))
                                 elif s['class'][1] == u'y-card':
-                                    icon = u'[COLOR FFFFFF00][][/COLOR]'
+                                    icon = u'[COLOR FFFFFF00][{}][/COLOR]'.format(_('card').decode('utf-8'))
                                 elif s['class'][1] == u'r-card':
-                                    icon = u'[COLOR FFFF0000][][/COLOR]'
+                                    icon = u'[COLOR FFFF0000][{}][/COLOR]'.format(_('card').decode('utf-8'))
                                 elif s['class'][1] == u'up':
                                     up_down = name + \
-                                        u'[COLOR FF008000] \u2191 [/COLOR]'
+                                        u'[COLOR FF008000] - {}  [/COLOR]'.format(_('came').decode('utf-8'))
                                     name = u''
                                 elif s['class'][1] == u'down':
                                     icon = up_down + name + \
-                                        u'[COLOR FFFF0000] \u2193 [/COLOR]'
+                                        u'[COLOR FFFF0000] - {}[/COLOR]'.format(
+                                            _('gone').decode('utf-8'))
                                     up_down = u''
                                     name = u''
                         else:
@@ -1073,6 +1070,7 @@ class LiveSport(simpleplugin.Plugin):
                                                  self.get(id_, 'league')),
                   'info': {'video': {'title': title, 'plot': plot}},
                   'icon': self.get(id_, 'icon'),
+                  'fanart': self.get(id_, 'fanart'),
                   'url': '',
                   'is_playable': False,
                   'is_folder': False})
@@ -1080,6 +1078,7 @@ class LiveSport(simpleplugin.Plugin):
         l.append({'label': u'[B]{}    {} : {}    {} [/B]'.format(self.get(id_, 'command1'), info_mini['scorel'], info_mini['scorer'], self.get(id_, 'command2')),
                   'info': {'video': {'title': title, 'plot': plot}},
                   'icon': self.get(id_, 'icon'),
+                  'fanart': self.get(id_, 'fanart'),
                   'url': '',
                   'is_playable': False,
                   'is_folder': False})
@@ -1107,7 +1106,7 @@ class LiveSport(simpleplugin.Plugin):
                           'info': {'video': {'title': title, 'plot': plot}},
                           'thumb': icon,
                           'icon': icon,
-                          'fanart': '',
+                          'fanart': self.get(id_, 'fanart'),
                           'art': {'icon': icon, 'thumb': icon, },
                           'url': self.get_url(action='play', href=link['href'], id=id_),
                           'is_playable': True})
@@ -1115,6 +1114,7 @@ class LiveSport(simpleplugin.Plugin):
                 l.append({'label': link['label'],
                           'info': {'video': {'title': title, 'plot': plot}},
                           'icon': self.get(id_, 'icon'),
+                          'fanart': self.get(id_, 'fanart'),
                           'url': '',
                           'is_playable': False,
                           'is_folder': False})
@@ -1269,7 +1269,7 @@ class LiveSport(simpleplugin.Plugin):
                     'art': {
                         'thumb': '',
                         'poster': '',
-                        'fanart': self.fanart,
+                        'fanart': item['fanart'],
                         'icon': icon,
                     },
                     'info': {

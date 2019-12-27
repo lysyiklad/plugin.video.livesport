@@ -27,16 +27,16 @@
 
 	</category>
 	<category label="AceStream"> 
-		<setting id="is_default_ace" type="bool" label="Использовать по-умолчанию способ воспроизведения AceStream" default="false"/>
-		<setting label="Движок по-умолчанию" visible="eq(-1,true)" type="enum" id="default_ace" values="Ace Stream Engine #1|Ace Stream Engine #2|HTTPAceProxy|TAM|Plexus" default="Ace Stream Engine #1" />
+		<setting id="is_default_ace" type="bool" label="10008" default="false"/>
+		<setting label="10009" visible="eq(-1,true)" type="enum" id="default_ace" values="Ace Stream Engine #1|Ace Stream Engine #2|HTTPAceProxy|TAM|Plexus" default="Ace Stream Engine #1" />
 		<setting type="sep"/>
 		<setting type="lsep" label='Ace Stream Engine #1'/>
 		<setting label = "IP"  type = "ipaddress"  id = "ipace1" default='127.0.0.1' />
-		<setting id="is_hls1" type="bool" label="Использовать hls" default="false"/>
+		<setting id="is_hls1" type="bool" label="hls" default="false"/>
 		<setting type="sep"/>
 		<setting type="lsep" label='Ace Stream Engine #2'/>
 		<setting label = "IP"  type = "ipaddress"  id = "ipace2" default='127.0.0.1' />
-		<setting id="is_hls2" type="bool" label="Использовать hls" default="false"/>
+		<setting id="is_hls2" type="bool" label="hls" default="false"/>
 		<setting type="sep"/>
 		<setting type="lsep" label='HTTPAceProxy'/>
 		<setting label = "IP"  type = "ipaddress"  id = "ipproxy" default='127.0.0.1' />

@@ -42,6 +42,13 @@ msgctxt "#10007"
 msgid "Update period in the background, min."
 msgstr "Период обновления в фоновом режиме, мин."
 
+msgctxt "#10008"
+msgid "Use the default AceStream playback method"
+msgstr "Использовать по-умолчанию способ AceStream"
+
+msgctxt "#10009"
+msgid "AceStream default playback method"
+msgstr "Способ AceStream по-умолчанию"
 
 
 
@@ -174,7 +181,17 @@ msgctxt "#30031"
 msgid "GOAL"
 msgstr "ГОЛ"
 
+msgctxt "#30032"
+msgid "card"
+msgstr "карточка"
 
+msgctxt "#30033"
+msgid "came"
+msgstr "вышел"
+
+msgctxt "#30034"
+msgid "gone"
+msgstr "ушел"
 
 
 

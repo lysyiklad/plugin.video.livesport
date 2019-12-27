@@ -19,6 +19,6 @@ Kodi 17 и выше.<br />
   </extension>
   <assets>
     <icon>icon.png</icon>
-    <fanart>fanart.jpg</fanart>    
+    <fanart>fanart.png</fanart>    
   </assets>
 </addon>

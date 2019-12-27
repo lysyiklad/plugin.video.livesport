@@ -167,37 +167,37 @@ class ArtWorkFootBall(object):
         ifon.paste(ihome, art.pos_home, ihome)
         ifon.paste(iaway, art.pos_away, iaway)
 
-    def _create_art(self, type):
+    def _create_art(self, type_):
 
-        file = self.file(type)
+        file = self.file(type_)
         if os.path.exists(file):
             self.log('exists -%s' % file)
             return file
         try:
 
             ifon = Image.open(os.path.join(
-                self.plugin.dir('media'), 'fon_%s%s.png' % (self.theme, type)))
+                self.plugin.dir('media'), 'fon_%s%s.png' % (self.theme, type_)))
             ifon = ifon.convert("RGBA")
-            draw = ImageDraw.Draw(ifon)
+            # draw = ImageDraw.Draw(ifon)
 
-            art = ARTWORK_DATA[type]
+            # art = ARTWORK_DATA[type]
 
-            self._draw_text(draw, self.league, self.font(
-                'ubuntu_condensed', art.size_font_league), art.league)
-            self._draw_text(draw, self._data['home'], self.font(
-                'bandera_pro', art.size_font_command), art.com_home)
-            self._draw_text(draw, self.vs, self.font(
-                'ubuntu', art.size_font_weekday), art.vs)
-            self._draw_text(draw, self._data['away'], self.font(
-                'bandera_pro', art.size_font_command), art.com_away)
-            self._draw_text(draw, self.weekday, self.font(
-                'ubuntu', art.size_font_weekday), art.weekday)
-            self._draw_text(draw, self.month, self.font(
-                'ubuntu', art.size_font_weekday), art.month)
-            self._draw_text(draw, self.time, self.font(
-                'bandera_pro', art.size_font_time), art.time)
+            # self._draw_text(draw, self.league, self.font(
+            #     'ubuntu_condensed', art.size_font_league), art.league)
+            # self._draw_text(draw, self._data['home'], self.font(
+            #     'bandera_pro', art.size_font_command), art.com_home)
+            # self._draw_text(draw, self.vs, self.font(
+            #     'ubuntu', art.size_font_weekday), art.vs)
+            # self._draw_text(draw, self._data['away'], self.font(
+            #     'bandera_pro', art.size_font_command), art.com_away)
+            # self._draw_text(draw, self.weekday, self.font(
+            #     'ubuntu', art.size_font_weekday), art.weekday)
+            # self._draw_text(draw, self.month, self.font(
+            #     'ubuntu', art.size_font_weekday), art.month)
+            # self._draw_text(draw, self.time, self.font(
+            #     'bandera_pro', art.size_font_time), art.time)
 
-            self._paste_logo(type, ifon)
+            self._paste_logo(type_, ifon)
 
             ifon.save(file)
             return file
