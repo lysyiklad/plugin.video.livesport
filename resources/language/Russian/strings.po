@@ -98,8 +98,8 @@ msgid "Offline"
 msgstr "Законченные"
 
 msgctxt "#30011"
-msgid "League Choice"
-msgstr "Выбор турнира"
+msgid "Leagues Choice..."
+msgstr "Выбор турниров..."
 
 msgctxt "#30012"
 msgid "Refresh"

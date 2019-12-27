@@ -97,7 +97,7 @@ msgid "Offline"
 msgstr ""
 
 msgctxt "#30011"
-msgid "League Choice"
+msgid "Leagues Choice..."
 msgstr ""
 
 msgctxt "#30012"

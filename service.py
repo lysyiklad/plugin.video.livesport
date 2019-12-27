@@ -38,11 +38,10 @@ class Monitor(xbmc.Monitor):
     def onSettingsChanged(self):
         super(Monitor, self).onSettingsChanged()
         xbmc.sleep(500)
-        new_settings = self._get_settings()
+        new_settings = self._get_settings()        
         if new_settings != self._settings:
             plugin.on_settings_changed()
             self._settings = new_settings
-            xbmc.executebuiltin('Container.Refresh()')
 
 
 if __name__ == "__main__":

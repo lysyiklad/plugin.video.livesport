@@ -513,7 +513,7 @@ class LiveSport(simpleplugin.Plugin):
                            ' (compatible; MSIE 6.0; Windows NT 5.1; SV1) ; .NET CLR 1.1.4322; .NET CLR 2.0.50727; '
                            '.NET CLR 3.0.4506.2152; .NET CLR 3.5.30729; .NET4.0C)')
 
-            response = urllib2.urlopen(req)
+            response = urllib2.urlopen(req, timeout=5)
             self.log(self._get_response_info(response))
             html = response.read()
             response.close()
@@ -619,13 +619,14 @@ class LiveSport(simpleplugin.Plugin):
     def on_settings_changed(self):
         self.settings_changed = True
         xbmcgui.Dialog().notification(
-            self.name,  _('Changing settings ...'), xbmcgui.NOTIFICATION_INFO, 500)  # 'Changing settings ...'
+            self.name,  _('Changing settings ...'), self.icon, 1000)  # 'Changing settings ...'
         self.update()
         self.settings_changed = False
+        xbmc.executebuiltin('Container.Refresh()')
 
     def reset(self):
         """
-        Сброс списков
+        Обновление данных с удалением файлов данных
         :return:
         """
         xbmcgui.Dialog().notification(
@@ -662,7 +663,7 @@ class LiveSport(simpleplugin.Plugin):
 
     def create_listing_categories(self):
         self.update()
-        listing = [{'label': '[UPPERCASE][B][COLOR FF0084FF][{}][/COLOR][/B][/UPPERCASE]'.format(_('League Choice')), 'url': self.get_url(action='select_matches')},
+        listing = [#{'label': '[UPPERCASE][B][COLOR FF0084FF][{}][/COLOR][/B][/UPPERCASE]'.format(_('League Choice')), 'url': self.get_url(action='select_matches')},
                    {'label': '[UPPERCASE][COLOR FFFF0000][B]{}[/B][/COLOR][/UPPERCASE]'.format(_('Live')),
                     'icon': os.path.join(self.dir('media'), 'live.png'),
                     'url': self.get_url(action='listing', sort='live')},
@@ -823,7 +824,7 @@ class LiveSport(simpleplugin.Plugin):
                             'from=event&event_id={}&tab_id=undefined&post_id={}'.format(
                                 self._site, id_event, str(id_))
 
-            self.logd('url_links', url_links)
+            #self.logd('url_links', url_links)
 
             date_naive = tag_i['data-datetime']
             try:
@@ -846,7 +847,7 @@ class LiveSport(simpleplugin.Plugin):
             thumb = ''
             fanart = os.path.join(self.dir('media'), 'fanart_{}.jpg'.format(sport))
 
-            self.log('_parse_listing - fanart %s' % fanart)
+            #self.log('_parse_listing - fanart %s' % fanart)
 
             if self.get_setting('is_thumb', convert=True):
                 art = makeart.ArtWorkFootBall(self,
@@ -1171,7 +1172,7 @@ class LiveSport(simpleplugin.Plugin):
             return u'{} {} {} {:02} мин.'.format(pref, u'%s дн.' % dt.days if dt.days else u'',
                                                  u'%s ч.' % h if h else u'', int(dt.seconds % 3600 / 60))
         else:
-            return u'{} {}'.format(pref, str(dt))
+            return u'{} {}'.format(pref, str(dt).split('.')[0])
 
     def _get_listing(self, params=None):
         """
@@ -1190,11 +1191,11 @@ class LiveSport(simpleplugin.Plugin):
 
         try:
             for item in self._listing.values():
-                self.logd(item['label'].encode('utf-8'), str(item))
+                #self.logd(item['label'].encode('utf-8'), str(item))
 
                 info_match = self._get_mini_info_math(item['id_event'], center)
 
-                #self.logd('info_match', info_match)
+                #self.logd(item['label'].encode('utf-8'), info_match)
 
                 if not info_match:
                     self.logd('_get_listing() - not info_match', item['label'])
