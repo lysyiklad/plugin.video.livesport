@@ -7,15 +7,24 @@ SimplePlugin micro-framework for Kodi content plugins
 
 **License**: `GPL v.3 <https://www.gnu.org/copyleft/gpl.html>`_
 """
+from __future__ import division
+from __future__ import unicode_literals
 
+from future import standard_library
+standard_library.install_aliases()
+from builtins import zip
+from builtins import str
+from past.builtins import basestring
+from past.utils import old_div
+from builtins import object
 import os
 import sys
 import re
 import inspect
 import time
-import cPickle as pickle
-from urlparse import parse_qs, urlparse
-from urllib import urlencode, quote_plus, unquote_plus
+import pickle as pickle
+from urllib.parse import parse_qs, urlparse
+from urllib.parse import urlencode, quote_plus, unquote_plus
 from functools import wraps
 from collections import MutableMapping, namedtuple
 from copy import deepcopy
@@ -58,7 +67,7 @@ def _format_vars(variables):
     :return: formatted string with sorted ``var = val`` pairs
     :rtype: str
     """
-    var_list = [(var, val) for var, val in variables.iteritems()]
+    var_list = [(var, val) for var, val in variables.items()]
     lines = []
     for var, val in sorted(var_list, key=lambda i: i[0]):
         if not (var.startswith('__') or var.endswith('__')):
@@ -103,7 +112,7 @@ def debug_exception(logger=None):
         logger('Unhandled exception detected!')
         logger('*** Start diagnostic info ***')
         logger('System info: {0}'.format(uname()))
-        logger('OS info: {0}'.format(xbmc.getInfoLabel('System.OSVersionInfo')))
+        #logger('OS info: {0}'.format(xbmc.getInfoLabel('System.OSVersionInfo')))
         logger('Kodi version: {0}'.format(
             xbmc.getInfoLabel('System.BuildVersion'))
         )
@@ -312,7 +321,7 @@ class MemStorage(MutableMapping):
         :rtype: str
         """
         lines = []
-        for key, val in self.iteritems():
+        for key, val in self.items():
             lines.append('{0}: {1}'.format(repr(key), repr(val)))
         return ', '.join(lines)
 
@@ -475,7 +484,7 @@ class Addon(object):
             return ''
 
     @property
-    def config_dir(self):
+    def profile_dir(self):
         """
         Addon config dir
 
@@ -503,7 +512,7 @@ class Addon(object):
         :return: UI string in the current language
         :rtype: str
         """
-        return self._addon.getLocalizedString(id_).encode('utf-8')
+        return self._addon.getLocalizedString(id_)  #.encode('utf-8')
 
     def get_setting(self, id_, convert=True):
         """
@@ -529,7 +538,7 @@ class Addon(object):
             elif setting == 'false':
                 return False
             elif re.search(r'^-?\d+$', setting) is not None:
-                return long(setting)  # Convert numeric strings to long
+                return int(setting)  # Convert numeric strings to long
             elif re.search(r'^-?\d+\.\d+$', setting) is not None:
                 return float(setting)  # Convert numeric strings with a dot to float
         return setting
@@ -564,8 +573,9 @@ class Addon(object):
             Default: ``xbmc.LOGDEBUG``
         :type level: int
         """
-        
-        if isinstance(message, unicode):
+        if isinstance(message, bool):
+            message = str(message)        
+        if isinstance(message, str):
             message = message.encode('utf-8')
         xbmc.log('{0} [v.{1}]: {2}'.format(self.id, self.version, message), level)
 
@@ -615,9 +625,12 @@ class Addon(object):
         
 
     def logd(self, func, message):
-        if isinstance(message, unicode):
+        if isinstance(message, bool):
+            message = str(message)
+        if isinstance(message, str):
             message = message.encode('utf-8')
-        xbmc.log('{0} [v.{1}]: <{2}> - {3}'.format(self.id,
+        
+        xbmc.log(u'{0} [v.{1}]: <{2}> - {3}'.format(self.id,
                                                  self.version, func, message),  xbmc.LOGDEBUG)
 
     def get_storage(self, filename='storage.pcl'):
@@ -639,7 +652,7 @@ class Addon(object):
         :return: Storage object
         :rtype: Storage
         """
-        return Storage(self.config_dir, filename)
+        return Storage(self.profile_dir, filename)
 
     def get_mem_storage(self, storage_id='', window_id=10000):
         """
@@ -1032,7 +1045,7 @@ class Plugin(Addon):
         """
         raw_params = parse_qs(paramstring)
         params = Params()
-        for key, value in raw_params.iteritems():
+        for key, value in raw_params.items():
             params[key] = value[0] if len(value) == 1 else value
         return params
 
@@ -1123,7 +1136,7 @@ class Plugin(Addon):
 
         :return: action callable's return value
         """
-        self.log_debug('Actions: {0}'.format(str(self.actions.keys())))
+        self.log_debug('Actions: {0}'.format(str(list(self.actions.keys()))))
         action = self._params.get('action', 'root')
         self.log_debug('Called action "{0}" with params "{1}"'.format(action, str(self._params)))
         try:
@@ -1222,7 +1235,7 @@ class Plugin(Addon):
             if item.get('info') \
               and item['info'].get('video'):
                 if item['info']['video'].get('duration'):
-                    item['info']['video']['duration'] = (item['info']['video']['duration'] / 60)
+                    item['info']['video']['duration'] = (old_div(item['info']['video']['duration'], 60))
 
         if major_version >= '16':
             art = item.get('art')
@@ -1243,11 +1256,11 @@ class Plugin(Addon):
             list_item.setArt(item['art'])
 
         if item.get('stream_info'):
-            for stream, stream_info in item['stream_info'].iteritems():
+            for stream, stream_info in item['stream_info'].items():
                 list_item.addStreamInfo(stream, stream_info)
 
         if item.get('info'):
-            for media, info in item['info'].iteritems():
+            for media, info in item['info'].items():
                 list_item.setInfo(media, info)
 
         if item.get('context_menu') is not None:
@@ -1260,7 +1273,7 @@ class Plugin(Addon):
             list_item.setMimeType(item['mime'])
 
         if item.get('properties'):
-            for key, value in item['properties'].iteritems():
+            for key, value in item['properties'].items():
                 list_item.setProperty(key, value)
 
         if major_version >= '17':
@@ -1437,7 +1450,7 @@ class RoutedPlugin(Plugin):
                     quote_plus(str(arg).encode('utf-8'))
                 )
             # list allows to manipulate the dict during iteration
-            for key, value in list(kwargs.iteritems()):
+            for key, value in list(kwargs.items()):
                 for match in matches[len(args):]:
 
                     match_string = match[1:-1]
@@ -1557,7 +1570,7 @@ class RoutedPlugin(Plugin):
         """
         path = urlparse(sys.argv[0]).path
         self.log_debug('Routes: {0}'.format(self._routes))
-        for route in self._routes.itervalues():
+        for route in self._routes.values():
             if route.pattern == path:
                 kwargs = {}
                 self.log_debug(
@@ -1565,7 +1578,7 @@ class RoutedPlugin(Plugin):
                 with debug_exception(self.log_error):
                     return route.func(**kwargs)
 
-        for route in self._routes.itervalues():
+        for route in self._routes.values():
             pattern = route.pattern
             if not pattern.count('/') == path.count('/'):
                 continue
@@ -1577,7 +1590,7 @@ class RoutedPlugin(Plugin):
             if match is not None:
                 kwargs = match.groupdict()
                 # list allows to manipulate the dict during iteration
-                for key, value in list(kwargs.iteritems()):
+                for key, value in list(kwargs.items()):
                     if key.startswith('int__') or key.startswith('float__'):
                         del kwargs[key]
                         if key.startswith('int__'):

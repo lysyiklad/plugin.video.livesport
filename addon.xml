@@ -5,6 +5,7 @@
     <import addon="script.module.dateutil"/>
     <import addon="script.module.beautifulsoup4" version="4.6.2"/>    
     <import addon="script.module.pil"/>
+    <import addon="script.module.simplemedia" version="1.2.2"/>
   </requires>
   <extension point="xbmc.python.pluginsource"  provides="video" library="default.py"><provides>video</provides></extension>
   <extension point="xbmc.service" library="service.py" />

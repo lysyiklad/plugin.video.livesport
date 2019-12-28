@@ -8,13 +8,15 @@
 		<setting id="is_thumb" type="bool" label="10002" default="false" visible="true"/>
 		<setting id="delta_scan" type="number" label="10003" default="120" visible="true"/>		
 		<setting id="reset" type="action" label="30024" action="RunPlugin(plugin://plugin.video.livesport?action=reset)" />
+		<setting id="delta_links" type="number" label="Время до матча для обязательного парсинга ссылок, мин." default="30" visible="true"/>
+
 
 		<setting type="lsep" label='10004'/>
 		<setting id="is_update_service" type="bool" label="10006" default="false" visible="true"/>
 		<setting id="scan_service" type="number" label="10007" default="180" visible="eq(-1,true)"/>
 		<setting type="lsep" label='10005'/>
 
-		<setting id="delta_links" type="number" label="Время до матча для обязательного парсинга ссылок, мин." default="30" visible="false"/>		
+		
 		<setting id="selected_leagues" type="text" label="selected_leagues" default="0" visible="false" />		
 		<setting id="is_play" type="bool" label="Воспроизвести сразу без выбора ссылок" default="false" visible="false"/>
 		<setting label="Ссылка по умолчанию для воспроизведения" type="labelenum" id="play_engine" values="Ace Stream|SopCast" default="Ace Stream" visible="eq(-1,true)" />		
