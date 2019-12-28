@@ -3,35 +3,37 @@
 from __future__ import unicode_literals
 from __future__ import print_function
 from __future__ import division
+
 from future import standard_library
 standard_library.install_aliases()
-from builtins import str
-from builtins import range
-from past.utils import old_div
-import datetime
-import json
-import os
-import pickle
-import urllib.request, urllib.error, urllib.parse
-from collections import OrderedDict
-from urllib.parse import urlparse
-
-import bs4
-import dateutil
-from dateutil.parser import *
-from dateutil.tz import UTC, tzlocal, tzoffset
-
-import xbmc
-import xbmcaddon
-import xbmcgui
-import xbmcplugin
-
-
+import urllib.parse
+import urllib.error
+import urllib.request
 from . import simpleplugin, makeart
+import xbmcplugin
+import xbmcgui
+import xbmcaddon
+import xbmc
+from dateutil.tz import UTC, tzlocal, tzoffset
+from dateutil.parser import *
+import dateutil
+import bs4
+from urllib.parse import urlparse
+from collections import OrderedDict
+import pickle
+import os
+import json
+import datetime
+#from past.utils import old_div
+from builtins import range
+from builtins import str
+
+
 
 LISTING_PICKLE = 'listing.pickle'
 
 URL_NOT_LINKS = 'https://www.ixbt.com/multimedia/video-methodology/bitrates/avc-1080-25p/1080-25p-10mbps.mp4'
+
 
 def file_read(file):
     with open(file, 'rt') as f:  # , encoding="utf-8" , errors='ignore'
@@ -121,7 +123,7 @@ class LiveSport(simpleplugin.Plugin):
 
     @property
     def version_kodi(self):
-        return int(xbmc.getInfoLabel('System.BuildVersion')[:2])    
+        return int(xbmc.getInfoLabel('System.BuildVersion')[:2])
 
     def dir(self, dir_):
         return self._dir[dir_]
@@ -182,10 +184,11 @@ class LiveSport(simpleplugin.Plugin):
         status = self.get(id, 'status')
 
         if links and status == 'OFFLINE':
-            self.logd('links', 'id - %s  status - %s ' %  (id, status))
+            self.logd('links', 'id - %s  status - %s ' % (id, status))
             return links
-        if True:    #not links or not self.date_scan or tsn > self.get_setting('delta_scan') or (tsn > dt and tnd < dt):
-            self.logd('links - id - %s : time now date - %s time scan now - %s' % (id, tnd, tsn), links)
+        if not links or not self.date_scan or tsn > self.get_setting('delta_scan') or tsn > dt: # and tnd < dt):
+            self.logd('links - id - %s : time now date - %s time scan now - %s' %
+                      (id, tnd, tsn), links)
             html = self.http_get(self.get(id, 'url_links'))
             if not html:
                 self.logd('links', 'not html')
@@ -196,7 +199,6 @@ class LiveSport(simpleplugin.Plugin):
             self.dump()
 
         self.logd('self.get(%s, href)' % id, self.get(id, 'href'))
-
 
         return links
 
@@ -224,7 +226,7 @@ class LiveSport(simpleplugin.Plugin):
 
         html = self.http_get(self._site)
 
-        #self.log(html)
+        # self.log(html)
 
         # with open(file_html, 'wb') as f:
         #     f.write(html)
@@ -240,12 +242,6 @@ class LiveSport(simpleplugin.Plugin):
         if not self._listing:
             self.logd('update', 'self._listing None')
             return
-
-        # if self.get_setting('is_noold_item'):
-        #     for id in self._listing.keys():
-        #         dt = self._time_now_date(id)
-        #         if dt < -180:
-        #             del self._listing[id]
 
         for item in list(self._listing.values()):
             if 'thumb' not in item:
@@ -372,11 +368,9 @@ class LiveSport(simpleplugin.Plugin):
                     self.log('start acestream play')
 
                     as_url = 'http://' + '127.0.0.1' + ':' + '6878' + '/ace/getstream?id=' + \
-                        urlparse(href).netloc + \
-                        "&format=json"  # &_idx=" + str(ep)
+                        urlparse(href).netloc + '&format=json'  # &_idx=" + str(ep)
 
-                    json = eval(self.http_get(as_url).replace(
-                        'null', '"null"'))["response"]
+                    json = eval(self.http_get(as_url).replace(b'null', b'"null"'))["response"]
                     self.log(type(json))
                     self.log(json)
                     stat_url = json["stat_url"]
@@ -388,8 +382,7 @@ class LiveSport(simpleplugin.Plugin):
 
                     for i in range(30):
                         xbmc.sleep(1000)
-                        j = eval(self.http_get(stat_url).replace(
-                            'null', '"null"'))["response"]
+                        j = eval(self.http_get(stat_url).replace(b'null', b'"null"'))["response"]
                         if j == {}:
                             progress.update(i*3, message=_('wait...'))
                         else:
@@ -403,7 +396,7 @@ class LiveSport(simpleplugin.Plugin):
                             progress.update(i*3, message=_('prebuffering...'))
                             self.logd('get stat acestream - ', j)
                             msg = 'seeds - %s speed - %s download - %s' % (
-                                str(j['peers']), str(j['speed_down']), str(old_div(j['downloaded'],1024)))
+                                str(j['peers']), str(j['speed_down']), str(int(j['downloaded']/1024)))
                             progress.update(i*3, msg)
 
                     if i == 29:
@@ -427,7 +420,6 @@ class LiveSport(simpleplugin.Plugin):
             path = self.get_path_sopcast(href)
         else:
             path = url.geturl()
-            self.logd('GGGGGGGGGGGGGGGGGGGGGGG', path)
 
         if not path:
             msg = _('Resource Unavailable or Invalid!')
@@ -483,7 +475,7 @@ class LiveSport(simpleplugin.Plugin):
         if id not in self._listing:
             return None
 
-        return int(old_div((self.get(id, 'date') - self.time_now_utc()).total_seconds(), 60))
+        return int((self.get(id, 'date') - self.time_now_utc()).total_seconds()/60)
 
     def _time_scan_now(self):
         """
@@ -491,7 +483,7 @@ class LiveSport(simpleplugin.Plugin):
         """
         if self.date_scan is None:
             return None
-        return int(old_div((self.time_now_utc() - self.date_scan).total_seconds(), 60))
+        return int((self.time_now_utc() - self.date_scan).total_seconds()/60)
 
     def _time_scan_date(self, id):
         """
@@ -499,7 +491,7 @@ class LiveSport(simpleplugin.Plugin):
         """
         if self.date_scan is None:
             return None
-        return int(old_div((self.get(id, 'date') - self.date_scan).total_seconds(), 60))
+        return int((self.get(id, 'date') - self.date_scan).total_seconds()/60)
 
     def http_get(self, url):
         try:
@@ -513,7 +505,6 @@ class LiveSport(simpleplugin.Plugin):
             self.log(self._get_response_info(response))
             html = response.read()
             response.close()
-            self.logd('HTTP_GET !!!!!', type(html))
             return html
         except Exception as e:
             # xbmcgui.Dialog().notification(self.name, 'HTTP ERROR %s' % str(e),
@@ -659,38 +650,38 @@ class LiveSport(simpleplugin.Plugin):
 
     def create_listing_categories(self):
         self.update()
-        listing = [#{'label': '[UPPERCASE][B][COLOR FF0084FF][{}][/COLOR][/B][/UPPERCASE]'.format(_('League Choice')), 'url': self.get_url(action='select_matches')},
-                   {'label': '[UPPERCASE][COLOR FFFF0000][B]{}[/B][/COLOR][/UPPERCASE]'.format(_('Live')),
-                    'icon': os.path.join(self.dir('media'), 'live.png'),
-                    'url': self.get_url(action='listing', sort='live')},
-                   {'label': '[UPPERCASE][COLOR FF999999][B]{}[/B][/COLOR][/UPPERCASE]'.format(_('Offline')),
-                    'icon': os.path.join(self.dir('media'), 'offline.png'),
-                    'url': self.get_url(action='listing', sort='offline')},
-                   {'label': '[UPPERCASE][B]{}[/B][/UPPERCASE]'.format(_('All')),
-                    'icon': self.icon,
-                    'url': self.get_url(action='listing', sort='all')},
-                   {'label': '[UPPERCASE][B]{}[/B][/UPPERCASE]'.format(_('Football')),
-                    'icon': os.path.join(self.dir('media'), 'football.png'),
-                    'url': self.get_url(action='listing', sort='football')},
-                   {'label': '[UPPERCASE][B]{}[/B][/UPPERCASE]'.format(_('Ice Hockey')),
-                    'icon': os.path.join(self.dir('media'), 'hockey.png'),
-                    'url': self.get_url(action='listing', sort='hockey')},
-                   {'label': '[UPPERCASE][B]{}[/B][/UPPERCASE]'.format(_('Basketball')),
-                    'icon': os.path.join(self.dir('media'), 'basketball.png'),
-                    'url': self.get_url(action='listing', sort='basketball')},
-                   {'label': '[UPPERCASE][B]{}[/B][/UPPERCASE]'.format(_('Tennis')),
-                    'icon': os.path.join(self.dir('media'), 'tennis.png'),
-                    'url': self.get_url(action='listing', sort='tennis')},
-                   {'label': '[UPPERCASE][B]{}[/B][/UPPERCASE]'.format(_('American Football')),
-                    'icon': os.path.join(self.dir('media'), 'american_football.png'),
-                    'url': self.get_url(action='listing', sort='american_football')},
-                   {'label': '[UPPERCASE][B]{}[/B][/UPPERCASE]'.format(_('Race')),
-                    'icon': os.path.join(self.dir('media'), 'race.png'),
-                    'url': self.get_url(action='listing', sort='race')},
-                   {'label': '[UPPERCASE][B]{}[/B][/UPPERCASE]'.format(_('Boxing')),
-                    'icon': os.path.join(self.dir('media'), 'boxing.png'),
-                    'url': self.get_url(action='listing', sort='boxing')},
-                   ]
+        listing = [  # {'label': '[UPPERCASE][B][COLOR FF0084FF][{}][/COLOR][/B][/UPPERCASE]'.format(_('League Choice')), 'url': self.get_url(action='select_matches')},
+            {'label': '[UPPERCASE][COLOR FFFF0000][B]{}[/B][/COLOR][/UPPERCASE]'.format(_('Live')),
+             'icon': os.path.join(self.dir('media'), 'live.png'),
+             'url': self.get_url(action='listing', sort='live')},
+            {'label': '[UPPERCASE][COLOR FF999999][B]{}[/B][/COLOR][/UPPERCASE]'.format(_('Offline')),
+             'icon': os.path.join(self.dir('media'), 'offline.png'),
+             'url': self.get_url(action='listing', sort='offline')},
+            {'label': '[UPPERCASE][B]{}[/B][/UPPERCASE]'.format(_('All')),
+             'icon': self.icon,
+             'url': self.get_url(action='listing', sort='all')},
+            {'label': '[UPPERCASE][B]{}[/B][/UPPERCASE]'.format(_('Football')),
+             'icon': os.path.join(self.dir('media'), 'football.png'),
+             'url': self.get_url(action='listing', sort='football')},
+            {'label': '[UPPERCASE][B]{}[/B][/UPPERCASE]'.format(_('Ice Hockey')),
+             'icon': os.path.join(self.dir('media'), 'hockey.png'),
+             'url': self.get_url(action='listing', sort='hockey')},
+            {'label': '[UPPERCASE][B]{}[/B][/UPPERCASE]'.format(_('Basketball')),
+             'icon': os.path.join(self.dir('media'), 'basketball.png'),
+             'url': self.get_url(action='listing', sort='basketball')},
+            {'label': '[UPPERCASE][B]{}[/B][/UPPERCASE]'.format(_('Tennis')),
+             'icon': os.path.join(self.dir('media'), 'tennis.png'),
+             'url': self.get_url(action='listing', sort='tennis')},
+            {'label': '[UPPERCASE][B]{}[/B][/UPPERCASE]'.format(_('American Football')),
+             'icon': os.path.join(self.dir('media'), 'american_football.png'),
+             'url': self.get_url(action='listing', sort='american_football')},
+            {'label': '[UPPERCASE][B]{}[/B][/UPPERCASE]'.format(_('Race')),
+             'icon': os.path.join(self.dir('media'), 'race.png'),
+             'url': self.get_url(action='listing', sort='race')},
+            {'label': '[UPPERCASE][B]{}[/B][/UPPERCASE]'.format(_('Boxing')),
+             'icon': os.path.join(self.dir('media'), 'boxing.png'),
+             'url': self.get_url(action='listing', sort='boxing')},
+        ]
         return listing
         # return self.create_listing(listing,
         #                     content='movies',
@@ -841,7 +832,8 @@ class LiveSport(simpleplugin.Plugin):
 
             poster = ''
             thumb = ''
-            fanart = os.path.join(self.dir('media'), 'fanart_{}.jpg'.format(sport))
+            fanart = os.path.join(
+                self.dir('media'), 'fanart_{}.jpg'.format(sport))
 
             #self.log('_parse_listing - fanart %s' % fanart)
 
@@ -861,7 +853,8 @@ class LiveSport(simpleplugin.Plugin):
                 icon_sport = thumb
 
             #self.logd('parse_listing', 'ADD MATCH - %s - %s' % (str(self.time_to_local(date_utc)), game))
-            self.logd('parse_listing', 'ADD MATCH - {} - {}'.format(self.time_to_local(date_utc), type(game)))
+            self.logd(
+                'parse_listing', 'ADD MATCH - {} - {}'.format(self.time_to_local(date_utc), type(game)))
 
             listing[id_] = {}
             item = listing[id_]
@@ -914,7 +907,6 @@ class LiveSport(simpleplugin.Plugin):
         html = self.http_get(href)
         soup = bs4.BeautifulSoup(html, 'html.parser')
         tag_iframe = soup.find('iframe')
-        print(tag_iframe['src'])
         src_html = self.http_get(tag_iframe['src'])
         if src_html is None:
             return ''
@@ -954,14 +946,14 @@ class LiveSport(simpleplugin.Plugin):
 
             tag_li = tag_broadcast.findAll('li')
 
-            for i, li in enumerate(tag_li):                
+            for i, li in enumerate(tag_li):
 
                 trs = li.find('table').find('tbody').findAll('tr')
 
                 for tr in trs:
 
                     tag_img = tr.find('img')
-                    if i == 0:
+                    if i == 0 and self.get_setting('is_http_link'):
                         href = self._resolve_flash_href(tr.find('a')['href'])
                         if href:
                             links.append(
@@ -969,13 +961,13 @@ class LiveSport(simpleplugin.Plugin):
                                     'status': 'broadcast',
                                     'icon': tag_img['src'],
                                     'lang': tag_img['title'],
-                                    'speed': '',    #td_class_text(tr, 'speed'),
-                                    'channel': '',    #td_class_text(tr, 'channel'),
-                                    'fps': '',    #td_class_text(tr, 'fps'),
-                                    'format': '',    #td_class_text(tr, 'format'),
+                                    'speed': '',
+                                    'channel': '',
+                                    'fps': '',
+                                    'format': '',
                                     'href': href,
                                 }
-                        )
+                            )
                     else:
                         links.append(
                             {
@@ -1027,16 +1019,23 @@ class LiveSport(simpleplugin.Plugin):
                         if len(s['class']) == 2:
                             if s['class'][0] == u'icon':
                                 if s['class'][1] == u'block-time':
-                                    icon = u'[COLOR FFFFFF00][B][ {} ][/B][/COLOR]'.format(s.text)
+                                    icon = u'[COLOR FFFFFF00][B][ {} ][/B][/COLOR]'.format(
+                                        s.text)
                                 elif s['class'][1].find('ball') != -1 or s['class'][1] == 'goal':
-                                    icon = u'[COLOR FFFF0000][B]{}[/B][/COLOR]'.format(_('GOAL'))
+                                    icon = u'[COLOR FFFF0000][B]{}[/B][/COLOR]'.format(
+                                        _('GOAL'))
+                                elif s['class'][1] == 'autogoal':
+                                    icon = u'[COLOR FFFF0000][B]{}[/B][/COLOR]'.format(_('AUTOGOAL'))
                                 elif s['class'][1] == u'y-card':
-                                    icon = u'[COLOR FFFFFF00][{}][/COLOR]'.format(_('card'))
+                                    icon = u'[COLOR FFFFFF00][{}][/COLOR]'.format(
+                                        _('card'))
                                 elif s['class'][1] == u'r-card':
-                                    icon = u'[COLOR FFFF0000][{}][/COLOR]'.format(_('card'))
+                                    icon = u'[COLOR FFFF0000][{}][/COLOR]'.format(
+                                        _('card'))
                                 elif s['class'][1] == u'up':
                                     up_down = name + \
-                                        u'[COLOR FF008000] - {}  [/COLOR]'.format(_('came'))
+                                        u'[COLOR FF008000] - {}  [/COLOR]'.format(
+                                            _('came'))
                                     name = u''
                                 elif s['class'][1] == u'down':
                                     icon = up_down + name + \
@@ -1111,6 +1110,7 @@ class LiveSport(simpleplugin.Plugin):
 
         for link in links:
             if link['status'] == 'broadcast':
+                label = ''
                 urlprs = urlparse(link['href'])
 
                 if urlprs.scheme == 'acestream':
@@ -1125,20 +1125,21 @@ class LiveSport(simpleplugin.Plugin):
                         label, link['speed'], link['channel'], link['format'], link['lang'])
                     #plot = plot + u'\n\n' + _('Plexus plugin required to view SopCast').decode('utf-8')
                 else:
-                    label = '[COLOR FFFFFFFF][  {}  ][/COLOR]'.format(urlprs.scheme)
-                    label = '{} - ({})'.format(label, link['lang'])
-                    icon = os.path.join(self.dir('media'), 'http.png')
+                    if self.get_setting('is_http_link'):
+                        label = '[COLOR FFFFFFFF][  {}  ][/COLOR]'.format(urlprs.scheme)
+                        label = '{} - ({})'.format(label, link['lang'])
+                        icon = os.path.join(self.dir('media'), 'http.png')
+                        self.logd('_get_links https', link['href'])
 
-                
-
-                l.append({'label': label,
-                          'info': {'video': {'title': title, 'plot': plot}},
-                          'thumb': icon,
-                          'icon': icon,
-                          'fanart': self.get(id_, 'fanart'),
-                          'art': {'icon': icon, 'thumb': icon, },
-                          'url': self.get_url(action='play', href=link['href'], id=id_),
-                          'is_playable': True})
+                if label:
+                    l.append({'label': label,
+                            'info': {'video': {'title': title, 'plot': plot}},
+                            'thumb': icon,
+                            'icon': icon,
+                            'fanart': self.get(id_, 'fanart'),
+                            'art': {'icon': icon, 'thumb': icon, },
+                            'url': self.get_url(action='play', href=link['href'], id=id_),
+                            'is_playable': True})
             else:
                 l.append({'label': link['label'],
                           'info': {'video': {'title': title, 'plot': plot}},
@@ -1196,9 +1197,9 @@ class LiveSport(simpleplugin.Plugin):
 
     def format_timedelta(self, dt, pref):
         if self._language == 'Russian':
-            h = int(old_div(dt.seconds, 3600))
+            h = int(dt.seconds/3600)
             return u'{} {} {} {:02} мин.'.format(pref, u'%s дн.' % dt.days if dt.days else u'',
-                                                 u'%s ч.' % h if h else u'', int(old_div(dt.seconds % 3600, 60)))
+                                                 u'%s ч.' % h if h else u'', int(dt.seconds / 3600 /60))
         else:
             return u'{} {}'.format(pref, str(dt).split('.')[0])
 
@@ -1253,8 +1254,9 @@ class LiveSport(simpleplugin.Plugin):
                         dt, _('After'))
                 else:
                     dt = now_utc - date_
-                    if int(old_div(dt.total_seconds(), 60)) < 110:
-                        plot = u'%s %s мин.' % (_('Live'), int(old_div(dt.total_seconds(), 60)))
+                    if int(dt.total_seconds()/60) < 110:
+                        plot = u'%s %s мин.' % (
+                            _('Live'), int(dt.total_seconds() / 60))
                     else:
                         plot = self.format_timedelta(
                             dt, _('Offline'))

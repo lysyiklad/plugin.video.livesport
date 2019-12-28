@@ -14,8 +14,8 @@ from future import standard_library
 standard_library.install_aliases()
 from builtins import zip
 from builtins import str
-from past.builtins import basestring
-from past.utils import old_div
+#from past.builtins import basestring
+#from past.utils import old_div
 from builtins import object
 import os
 import sys
@@ -1235,7 +1235,7 @@ class Plugin(Addon):
             if item.get('info') \
               and item['info'].get('video'):
                 if item['info']['video'].get('duration'):
-                    item['info']['video']['duration'] = (old_div(item['info']['video']['duration'], 60))
+                    item['info']['video']['duration'] = (int(item['info']['video']['duration']/60))
 
         if major_version >= '16':
             art = item.get('art')

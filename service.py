@@ -18,6 +18,7 @@ SETTING_UPDATE = [
     'is_thumb',
     'is_pars_links',
     'is_noold_item',
+    'is_http_link',
 ]
 
 

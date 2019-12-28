@@ -1,7 +1,12 @@
 # -*- coding: utf-8 -*-
 
+from __future__ import division
+from future import standard_library
+standard_library.install_aliases()
+from builtins import str
+from builtins import object
 import os
-import urllib2
+import urllib.request, urllib.error, urllib.parse
 import io
 from PIL import Image, ImageDraw, ImageFont
 import datetime
@@ -55,7 +60,7 @@ def _cuttext(text, font, maxlength_text=MAX_LENGTH_TEXT):
 
 def _get_indent_left_for_center(text, width_frame, font):
     w, h = font.getsize(text)
-    return (width_frame - w) / 2
+    return int((width_frame - w) / 2)
 
 
 def _http_get_image(url):
@@ -64,13 +69,13 @@ def _http_get_image(url):
     :return:
     """
     try:
-        req = urllib2.Request(url=url)
+        req = urllib.request.Request(url=url)
         req.add_header('User-Agent',
                        'Mozilla/5.0 (Windows NT 6.1; Trident/7.0; rv:11.0) like Gecko')
         req.add_header('Content-Type',
                        'image/png')
 
-        resp = urllib2.urlopen(req, timeout=10)
+        resp = urllib.request.urlopen(req, timeout=10)
         http = resp.read()
         resp.close()
         return http
@@ -96,7 +101,7 @@ class ArtWorkFootBall(object):
         self._theme = 'light'
 
     def log(self, msg):
-        if self._plugin:
+        if self._plugin is not None:
             self._plugin.logd('ArtWorkFootBall', msg)
 
     @property

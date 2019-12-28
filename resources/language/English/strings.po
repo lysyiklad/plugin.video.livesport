@@ -50,6 +50,13 @@ msgctxt "#10009"
 msgid "AceStream default playback method"
 msgstr ""
 
+msgctxt "#10010"
+msgid "Data update links, min."
+msgstr ""
+
+msgctxt "#10011"
+msgid "Scan http links"
+msgstr ""
 
 
 msgctxt "#30000"
@@ -192,4 +199,6 @@ msgctxt "#30034"
 msgid "gone"
 msgstr ""
 
-
+msgctxt "#30035"
+msgid "AUTOGOAL"
+msgstr ""
