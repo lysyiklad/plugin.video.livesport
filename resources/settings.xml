@@ -1,32 +1,21 @@
 <?xml version="1.0" encoding="utf-8" standalone="yes"?>
 <settings>
-	<category label="Основные" visible="false">
+	<category label="10012">
 		<setting id="url_site" type="text" label="URL" default="https://livesport.ws" visible="true" />
 		<setting label="10000" type="labelenum" id="time_zone_site" values="-12|-11|-10|-9|-8|-7|-6|-5|-4|-3|-2|-1|0|1|2|3|4|5|6|7|8|9|10|11|12" default="3" />
 		<setting id="select_matches" option="close" type="action" label="30011" action="RunPlugin(plugin://plugin.video.livesport?action=select_matches)" />
 		<setting id="is_http_link" type="bool" label="10011" default="true" visible="true"/>
 		<setting id="is_noold_item" type="bool" label="10001" default="true" visible="true"/>
-		<setting id="is_thumb" type="bool" label="10002" default="false" visible="true"/>
 		<setting id="delta_scan" type="number" label="10003" default="60" visible="true"/>
 		<setting id="delta_links" type="number" label="10010" default="10" visible="true"/>
 		<setting id="reset" type="action" label="30024" action="RunPlugin(plugin://plugin.video.livesport?action=reset)" />
-		<setting type="lsep" label='10004'/>
-		<setting id="is_update_service" type="bool" label="10006" default="false" visible="true"/>
-		<setting id="scan_service" type="number" label="10007" default="180" visible="eq(-1,true)"/>
-		<setting type="lsep" label='10005'/>
-
-		
-		<setting id="selected_leagues" type="text" label="selected_leagues" default="0" visible="false" />		
-		<setting id="is_play" type="bool" label="Воспроизвести сразу без выбора ссылок" default="false" visible="false"/>
-		<setting label="Ссылка по умолчанию для воспроизведения" type="labelenum" id="play_engine" values="Ace Stream|SopCast" default="Ace Stream" visible="eq(-1,true)" />		
-		<setting id="is_date_item" type="bool" label="Показывать дату в элементе списка" default="true" visible="false"/>        
-		<setting id="is_league_item" type="bool" label="Показывать турнир в элементе списка" default="true" visible="false"/>        
-        <setting id="is_debug" type="bool" label="Включить отладочный режим" default="true" visible="false"/>
-		<setting id="is_poster" type="bool" label="Создавать постеры" default="false" visible="false"/>
-		<setting id="is_fanart" type="bool" label="Создавать фанарты" default="false" visible="false"/>
-		<setting id="is_http_acesop" type="bool" label="Сканировать acestream и sopcast ссылки на трансляции" default="true" visible="false"/>
-		<setting id="is_pars_links" type="bool" label="Парсить ссылки" default="false" visible="false"/>
-
+		<setting id="selected_leagues" type="text" label="selected_leagues" default="0" visible="false" />
+	</category>
+	<category label="ArtWork">
+		<setting id="theme_artwork" label="10013" type="enum"  lvalues="10017|10018|10019|10020"/>
+		<setting id="is_thumb" type="bool" label="10002" default="false" visible="true"/>
+		<setting id="is_poster" type="bool" label="10015" default="false" visible="true"/>
+		<setting id="is_fanart" type="bool" label="10016" default="false" visible="true"/>
 	</category>
 	<category label="AceStream"> 
 		<setting id="is_default_ace" type="bool" label="10008" default="false"/>
@@ -42,5 +31,10 @@
 		<setting type="sep"/>
 		<setting type="lsep" label='HTTPAceProxy'/>
 		<setting label = "IP"  type = "ipaddress"  id = "ipproxy" default='127.0.0.1' />
-	</category>	
+	</category>
+	<category label="10004">
+		<setting id="is_update_service" type="bool" label="10006" default="false" visible="true"/>
+		<setting id="scan_service" type="number" label="10007" default="180" visible="eq(-1,true)"/>
+		<setting type="lsep" label='10005'/>
+	</category>
 </settings>

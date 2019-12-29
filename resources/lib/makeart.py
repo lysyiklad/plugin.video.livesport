@@ -2,6 +2,7 @@
 
 from __future__ import division
 from future import standard_library
+
 standard_library.install_aliases()
 from builtins import str
 from builtins import object
@@ -40,9 +41,12 @@ SPECIFIC_ARTWORK_DATA = namedtuple('SPECIFIC_ARTWORK_DATA', [
 ])
 
 ARTWORK_DATA = {
-    'poster': SPECIFIC_ARTWORK_DATA(25, 300, 365, 410, 530, 575, 645, (150, 150), (50, 100), (270, 100), 40, 55, 60, 35),
+    'poster': SPECIFIC_ARTWORK_DATA(25, 300, 365, 410, 530, 575, 645, (150, 150), (50, 100), (270, 100), 40, 55, 60,
+                                    35),
     'thumb': SPECIFIC_ARTWORK_DATA(10, 220, None, 280, 335, 380, 420, (120, 120), (70, 80), (290, 80), 25, 40, 55, 35),
-    'fanart': SPECIFIC_ARTWORK_DATA(None, None, None, None, None, None, None, (400, 400), (0, 10), (420, 10), 0, 0, 0, 0),
+    'fanart': SPECIFIC_ARTWORK_DATA(None, None, None, None, None, None, None, (400, 400), (190, 150), (690, 150), 0, 0,
+                                    0, 0),
+    # 'fanart': SPECIFIC_ARTWORK_DATA(None, None, None, None, None, None, None, (250, 250), (100, 100), (460, 100), 0, 0, 0, 0),
 }
 
 
@@ -172,35 +176,39 @@ class ArtWorkFootBall(object):
         ifon.paste(ihome, art.pos_home, ihome)
         ifon.paste(iaway, art.pos_away, iaway)
 
-    def _create_art(self, type_):
+    def _create_art(self, type_, background=None):
 
         file = self.file(type_)
         if os.path.exists(file):
             self.log('exists -%s' % file)
             return file
         try:
+            # import web_pdb
+            # web_pdb.set_trace()
 
-            ifon = Image.open(os.path.join(
-                self.plugin.dir('media'), 'fon_%s%s.png' % (self.theme, type_)))
+            art = ARTWORK_DATA[type_]
+
+            if background is None:
+                background = os.path.join(self.plugin.dir('media'), '%s_%s.png' % (self.theme, type_))
+
+            ifon = Image.open(background)
             ifon = ifon.convert("RGBA")
-            # draw = ImageDraw.Draw(ifon)
+            draw = ImageDraw.Draw(ifon)
 
-            # art = ARTWORK_DATA[type]
-
-            # self._draw_text(draw, self.league, self.font(
-            #     'ubuntu_condensed', art.size_font_league), art.league)
-            # self._draw_text(draw, self._data['home'], self.font(
-            #     'bandera_pro', art.size_font_command), art.com_home)
-            # self._draw_text(draw, self.vs, self.font(
-            #     'ubuntu', art.size_font_weekday), art.vs)
-            # self._draw_text(draw, self._data['away'], self.font(
-            #     'bandera_pro', art.size_font_command), art.com_away)
-            # self._draw_text(draw, self.weekday, self.font(
-            #     'ubuntu', art.size_font_weekday), art.weekday)
-            # self._draw_text(draw, self.month, self.font(
-            #     'ubuntu', art.size_font_weekday), art.month)
-            # self._draw_text(draw, self.time, self.font(
-            #     'bandera_pro', art.size_font_time), art.time)
+            self._draw_text(draw, self.league, self.font(
+                'ubuntu_condensed', art.size_font_league), art.league)
+            self._draw_text(draw, self._data['home'], self.font(
+                'bandera_pro', art.size_font_command), art.com_home)
+            self._draw_text(draw, self.vs, self.font(
+                'ubuntu', art.size_font_weekday), art.vs)
+            self._draw_text(draw, self._data['away'], self.font(
+                'bandera_pro', art.size_font_command), art.com_away)
+            self._draw_text(draw, self.weekday, self.font(
+                'ubuntu', art.size_font_weekday), art.weekday)
+            self._draw_text(draw, self.month, self.font(
+                'ubuntu', art.size_font_weekday), art.month)
+            self._draw_text(draw, self.time, self.font(
+                'bandera_pro', art.size_font_time), art.time)
 
             self._paste_logo(type_, ifon)
 
@@ -210,17 +218,14 @@ class ArtWorkFootBall(object):
             self.log('ERROR CREATE ART [%s] - %s' % (e, file))
             return ''
 
-    def create_poster(self):
-        return self._create_art('poster')
+    def create_poster(self, background=None):
+        return self._create_art('poster', background)
 
-    def create_thumb(self):
-        return self._create_art('thumb')
+    def create_thumb(self, background=None):
+        return self._create_art('thumb', background)
 
-    def create_fanart(self):
-        theme = self._theme
-        self._theme = ''
-        fanart = self._create_art('fanart')
-        self._theme = theme
+    def create_fanart(self, background=None):
+        fanart = self._create_art('fanart', background)
         return fanart
 
     def set_dark_theme(self):

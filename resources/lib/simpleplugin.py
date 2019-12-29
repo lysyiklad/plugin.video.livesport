@@ -629,6 +629,10 @@ class Addon(object):
             message = str(message)
         if isinstance(message, str):
             message = message.encode('utf-8')
+        if isinstance(func, bool):
+            func = str(func)
+        if isinstance(message, str):
+            func = func.encode('utf-8')
         
         xbmc.log(u'{0} [v.{1}]: <{2}> - {3}'.format(self.id,
                                                  self.version, func, message),  xbmc.LOGDEBUG)

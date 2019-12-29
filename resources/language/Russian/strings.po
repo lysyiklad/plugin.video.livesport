@@ -27,8 +27,8 @@ msgid "Data update period, min."
 msgstr "Период обновления данных, мин."
 
 msgctxt "#10004"
-msgid "Server settings"
-msgstr "Настройки сервера"
+msgid "Service settings"
+msgstr "Настройки службы"
 
 msgctxt "#10005"
 msgid "For the service settings to take effect, you must restart Kodi !"
@@ -57,6 +57,43 @@ msgstr "Период обновления ссылок, мин."
 msgctxt "#10011"
 msgid "Scan http links"
 msgstr "Сканировать http ссылки"
+
+msgctxt "#10012"
+msgid "Basic"
+msgstr "Основные"
+
+msgctxt "#10013"
+msgid "Theme artwork"
+msgstr "Тема artwork"
+
+
+msgctxt "#10015"
+msgid "Create poster"
+msgstr "Создавать постеры"
+
+msgctxt "#10016"
+msgid "Create fanart"
+msgstr "Создать фанарты"
+
+msgctxt "#10017"
+msgid "Light"
+msgstr "Светлая"
+
+msgctxt "#10018"
+msgid "Dark"
+msgstr "Темная"
+
+msgctxt "#10019"
+msgid "Blue"
+msgstr "Голубая"
+
+msgctxt "#10020"
+msgid "Transparent"
+msgstr "Прозрачная"
+
+
+
+
 
 
 msgctxt "#30000"

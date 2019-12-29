@@ -648,33 +648,43 @@ class LiveSport(simpleplugin.Plugin):
             # {'label': '[UPPERCASE][B][COLOR FF0084FF][{}][/COLOR][/B][/UPPERCASE]'.format(_('League Choice')), 'url': self.get_url(action='select_matches')},
             {'label': '[UPPERCASE][COLOR FFFF0000][B]{}[/B][/COLOR][/UPPERCASE]'.format(_('Live')),
              'icon': os.path.join(self.dir('media'), 'live.png'),
+             'fanart': self.fanart,
              'url': self.get_url(action='listing', sort='live')},
             {'label': '[UPPERCASE][COLOR FF999999][B]{}[/B][/COLOR][/UPPERCASE]'.format(_('Offline')),
              'icon': os.path.join(self.dir('media'), 'offline.png'),
+             'fanart': self.fanart,
              'url': self.get_url(action='listing', sort='offline')},
             {'label': '[UPPERCASE][B]{}[/B][/UPPERCASE]'.format(_('All')),
              'icon': self.icon,
+             'fanart': self.fanart,
              'url': self.get_url(action='listing', sort='all')},
             {'label': '[UPPERCASE][B]{}[/B][/UPPERCASE]'.format(_('Football')),
              'icon': os.path.join(self.dir('media'), 'football.png'),
+             'fanart': os.path.join(self.dir('media'), 'fanart_football.jpg'),
              'url': self.get_url(action='listing', sort='football')},
             {'label': '[UPPERCASE][B]{}[/B][/UPPERCASE]'.format(_('Ice Hockey')),
              'icon': os.path.join(self.dir('media'), 'hockey.png'),
+             'fanart': os.path.join(self.dir('media'), 'fanart_hockey.jpg'),
              'url': self.get_url(action='listing', sort='hockey')},
             {'label': '[UPPERCASE][B]{}[/B][/UPPERCASE]'.format(_('Basketball')),
              'icon': os.path.join(self.dir('media'), 'basketball.png'),
+             'fanart': os.path.join(self.dir('media'), 'fanart_basketball.jpg'),
              'url': self.get_url(action='listing', sort='basketball')},
             {'label': '[UPPERCASE][B]{}[/B][/UPPERCASE]'.format(_('Tennis')),
              'icon': os.path.join(self.dir('media'), 'tennis.png'),
+             'fanart': os.path.join(self.dir('media'), 'fanart_tennis.jpg'),
              'url': self.get_url(action='listing', sort='tennis')},
             {'label': '[UPPERCASE][B]{}[/B][/UPPERCASE]'.format(_('American Football')),
              'icon': os.path.join(self.dir('media'), 'american_football.png'),
+             'fanart': os.path.join(self.dir('media'), 'fanart_american_football.jpg'),
              'url': self.get_url(action='listing', sort='american_football')},
             {'label': '[UPPERCASE][B]{}[/B][/UPPERCASE]'.format(_('Race')),
              'icon': os.path.join(self.dir('media'), 'race.png'),
+             'fanart': os.path.join(self.dir('media'), 'fanart_race.jpg'),
              'url': self.get_url(action='listing', sort='race')},
             {'label': '[UPPERCASE][B]{}[/B][/UPPERCASE]'.format(_('Boxing')),
              'icon': os.path.join(self.dir('media'), 'boxing.png'),
+             'fanart': os.path.join(self.dir('media'), 'fanart_boxing.jpg'),
              'url': self.get_url(action='listing', sort='boxing')},
         ]
         return listing
@@ -791,8 +801,7 @@ class LiveSport(simpleplugin.Plugin):
 
             sport = os.path.basename(urlparse(icon_sport).path).split('.')[0]
 
-            icon_sport = os.path.join(
-                self.dir('media'), '{}.png'.format(sport))
+            icon_sport = os.path.join(self.dir('media'), '{}.png'.format(sport))
 
             tag_i = tag_a.find('span', {'class': 'date'}).find('i')
             id_event = int(tag_i['id'].split('-')[1])
@@ -825,32 +834,55 @@ class LiveSport(simpleplugin.Plugin):
             icon2 = tags_div[1].contents[3]['data-src'].replace('?18x18=1', '')
             command2 = tags_div[2].text
 
-            poster = icon_sport
-            thumb = icon_sport
-            fanart = os.path.join(
-                self.dir('media'), 'fanart_{}.jpg'.format(sport))
+            icon = icon_sport
+            poster = ''
+            thumb = ''
+            fanart = os.path.join(self.dir('media'), 'fanart_{}.jpg'.format(sport))
 
-            # self.log('_parse_listing - fanart %s' % fanart)
-
-            if self.get_setting('is_thumb', convert=True):
+            if self.is_create_artwork():
                 art = makeart.ArtWorkFootBall(self,
                                               id=id_,
-                                              date=self.time_to_local(
-                                                  date_utc),
+                                              date=self.time_to_local(date_utc),
                                               league=league,
                                               home=command1,
                                               away=command2,
                                               logo_home=icon1,
                                               logo_away=icon2)
 
-                art.set_transparent_theme()
-                thumb = art.create_fanart()
-                poster = thumb
-                icon_sport = thumb
+                theme_artwork = self.get_setting('theme_artwork')
 
-            # self.logd('parse_listing', 'ADD MATCH - %s - %s' % (str(self.time_to_local(date_utc)), game))
-            self.logd(
-                'parse_listing', 'ADD MATCH - {} - {}'.format(self.time_to_local(date_utc), type(game)))
+                # Light|Dark|Blue|Transparent
+
+                if theme_artwork == _('Light'):
+                    art.set_light_theme()
+                elif theme_artwork == _('Dark'):
+                    art.set_dark_theme()
+                elif theme_artwork == _('Blue'):
+                    art.set_blue_theme()
+                elif theme_artwork == _('Transparent'):
+                    art.set_transparent_theme()
+                else:
+                    self.logd('_parse_listing',
+                              'error set artwork theme')
+                    art.set_light_theme()
+
+                if self.get_setting('is_thumb'):
+                    thumb = art.create_thumb()
+                    self.logd('_parse_listing', thumb)
+                if self.get_setting('is_fanart'):
+                    fanart = art.create_fanart(background=fanart)
+                    self.logd('_parse_listing', fanart)
+                if self.get_setting('is_poster'):
+                    poster = art.create_poster()
+                    self.logd('_parse_listing', poster)
+
+            if thumb:
+                icon = thumb
+            else:
+                thumb = icon
+
+            # import web_pdb
+            # web_pdb.set_trace()
 
             listing[id_] = {}
             item = listing[id_]
@@ -862,7 +894,7 @@ class LiveSport(simpleplugin.Plugin):
             item['league'] = league
             item['date'] = date_utc
             item['thumb'] = thumb
-            item['icon'] = icon_sport
+            item['icon'] = icon
             item['poster'] = poster
             item['fanart'] = fanart
             item['icon1'] = icon1
@@ -873,6 +905,8 @@ class LiveSport(simpleplugin.Plugin):
             item['url_links'] = url_links
             if 'href' is not item:
                 item['href'] = []
+
+            self.log('ADD MATCH - %s' % item)
 
             if progress:
                 still = still - 1
@@ -1174,14 +1208,15 @@ class LiveSport(simpleplugin.Plugin):
         l = []
         if params['sort'] != 'offline':
             l.append({'label': '[UPPERCASE][B][COLOR FF0084FF][{}][/COLOR][/UPPERCASE][/B]'.format(_('Refresh')),
-                      'url': self.get_url(action='listing', sort=params['sort'])})
-        return l + self._get_listing(params=params)
-        # return self.create_listing(l + self._get_listing(params=params),
-        #                            content='movies',
-        #                         #    view_mode=55,
-        #                         #    sort_methods=(
-        #                         #        xbmcplugin.SORT_METHOD_DATEADDED, xbmcplugin.SORT_METHOD_VIDEO_RATING),
-        #                            cache_to_disk=False)
+                      'url': self.get_url(action='listing', sort=params['sort']),
+                      'icon': os.path.join(self.dir('media'), 'refresh.png')})
+        # return l + self._get_listing(params=params)
+        return self.create_listing(l + self._get_listing(params=params),
+                                   content='movies',
+                                   #    view_mode=55,
+                                   #    sort_methods=(
+                                   #        xbmcplugin.SORT_METHOD_DATEADDED, xbmcplugin.SORT_METHOD_VIDEO_RATING),
+                                   cache_to_disk=False)
 
     def format_timedelta(self, dt, pref):
         if self._language == 'Russian':
@@ -1261,9 +1296,9 @@ class LiveSport(simpleplugin.Plugin):
                         status = 'FFFF0000'
                 else:
                     lab = self.time_to_local(date_).strftime(
-                        u'%d.%m %H:%M' if self.get_setting('is_date_item') else u'%H:%M')
+                        '%d.%m %H:%M' if self.get_setting('is_date_item') else '%H:%M')
 
-                label = u'[COLOR %s]%s[/COLOR] - [B]%s[/B]    %s' % (status, lab, item['label'],
+                label = '[COLOR %s]%s[/COLOR] - [B]%s[/B]    %s' % (status, lab, item['label'],
                                                                      item['league'] if self.get_setting(
                                                                          'is_league_item') else '')
 
@@ -1277,8 +1312,7 @@ class LiveSport(simpleplugin.Plugin):
                             href = h['href']
                             break
 
-                is_folder, is_playable, get_url = self.geturl_isfolder_isplay(
-                    item['id'], href)
+                is_folder, is_playable, get_url = self.geturl_isfolder_isplay(item['id'], href)
 
                 listing.append({
                     'label': label,
@@ -1286,7 +1320,7 @@ class LiveSport(simpleplugin.Plugin):
                         'thumb': item['thumb'],
                         'poster': item['poster'],
                         'fanart': item['fanart'],
-                        'icon': item['icon'],
+                        'icon': item['thumb'],
                     },
                     'info': {
                         'video': {
