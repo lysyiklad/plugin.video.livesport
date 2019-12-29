@@ -7,12 +7,9 @@
 		<setting id="is_http_link" type="bool" label="10011" default="true" visible="true"/>
 		<setting id="is_noold_item" type="bool" label="10001" default="true" visible="true"/>
 		<setting id="is_thumb" type="bool" label="10002" default="false" visible="true"/>
-		<setting id="delta_scan" type="number" label="10003" default="120" visible="true"/>
-		<setting id="delta_links" type="number" label="10010" default="30" visible="true"/>
+		<setting id="delta_scan" type="number" label="10003" default="60" visible="true"/>
+		<setting id="delta_links" type="number" label="10010" default="10" visible="true"/>
 		<setting id="reset" type="action" label="30024" action="RunPlugin(plugin://plugin.video.livesport?action=reset)" />
-
-
-
 		<setting type="lsep" label='10004'/>
 		<setting id="is_update_service" type="bool" label="10006" default="false" visible="true"/>
 		<setting id="scan_service" type="number" label="10007" default="180" visible="eq(-1,true)"/>
@@ -27,8 +24,7 @@
         <setting id="is_debug" type="bool" label="Включить отладочный режим" default="true" visible="false"/>
 		<setting id="is_poster" type="bool" label="Создавать постеры" default="false" visible="false"/>
 		<setting id="is_fanart" type="bool" label="Создавать фанарты" default="false" visible="false"/>
-		
-		<setting id="is_http_acesop" type="bool" label="Сканировать acestream и sopcast ссылки на трансляции" default="true" visible="false"/>	
+		<setting id="is_http_acesop" type="bool" label="Сканировать acestream и sopcast ссылки на трансляции" default="true" visible="false"/>
 		<setting id="is_pars_links" type="bool" label="Парсить ссылки" default="false" visible="false"/>
 
 	</category>

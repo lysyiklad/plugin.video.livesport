@@ -10,6 +10,7 @@ standard_library.install_aliases()
 import urllib.parse
 import urllib.error
 import urllib.request
+# import requests
 from . import simpleplugin, makeart
 import xbmcgui
 import xbmc
@@ -59,15 +60,13 @@ class LiveSport(simpleplugin.Plugin):
 
         self._date_scan = None  # Время сканирования в utc
         self._listing = OrderedDict()
-        self._language = xbmc.getInfoLabel(
-            'System.Language')  # Russian English
+        self._language = xbmc.getInfoLabel('System.Language')  # Russian English
 
         if self._language != 'Russian':
             self._site = os.path.join(self.get_setting('url_site'), 'en')
         else:
             self._site = self.get_setting('url_site')
         global _
-        # _ = self.initialize_gettext()
 
         self.load()
 
@@ -133,6 +132,26 @@ class LiveSport(simpleplugin.Plugin):
     def dump(self):
         with open(self._listing_pickle, 'wb') as f:
             pickle.dump([self.date_scan, self._listing], f)
+
+    def http_get(self, url):
+        try:
+            req = urllib.request.Request(url=url)
+            req.add_header('User-Agent',
+                           'Mozilla/4.0 (compatible; MSIE 8.0; Windows NT 5.1; Trident/4.0; Mozilla/4.0'
+                           ' (compatible; MSIE 6.0; Windows NT 5.1; SV1) ; .NET CLR 1.1.4322; .NET CLR 2.0.50727; '
+                           '.NET CLR 3.0.4506.2152; .NET CLR 3.5.30729; .NET4.0C)')
+
+            response = urllib.request.urlopen(req, timeout=5)
+            self.log(self._get_response_info(response))
+            html = response.read()
+            response.close()
+            return html
+        except Exception as e:
+            # xbmcgui.Dialog().notification(self.name, 'HTTP ERROR %s' % str(e),
+            #                             xbmcgui.NOTIFICATION_ERROR, 2000)
+            err = '*** HTTP ERROR: %s ' % str(e)
+            self.log(err)
+            return ''
 
     def get_listing(self):
         """
@@ -214,6 +233,9 @@ class LiveSport(simpleplugin.Plugin):
         progress.update(1, message=_('Loading site data ...'))
 
         # file_html = os.path.join(self.path, 'livesport.html')
+
+        # import web_pdb
+        # web_pdb.set_trace()
 
         html = self.http_get(self._site)
 
@@ -484,26 +506,6 @@ class LiveSport(simpleplugin.Plugin):
         if self.date_scan is None:
             return None
         return int((self.get(id, 'date') - self.date_scan).total_seconds() / 60)
-
-    def http_get(self, url):
-        try:
-            req = urllib.request.Request(url=url)
-            req.add_header('User-Agent',
-                           'Mozilla/4.0 (compatible; MSIE 8.0; Windows NT 5.1; Trident/4.0; Mozilla/4.0'
-                           ' (compatible; MSIE 6.0; Windows NT 5.1; SV1) ; .NET CLR 1.1.4322; .NET CLR 2.0.50727; '
-                           '.NET CLR 3.0.4506.2152; .NET CLR 3.5.30729; .NET4.0C)')
-
-            response = urllib.request.urlopen(req, timeout=5)
-            self.log(self._get_response_info(response))
-            html = response.read()
-            response.close()
-            return html
-        except Exception as e:
-            # xbmcgui.Dialog().notification(self.name, 'HTTP ERROR %s' % str(e),
-            #                             xbmcgui.NOTIFICATION_ERROR, 2000)
-            err = '*** HTTP ERROR: %s ' % str(e)
-            self.log(err)
-            return ''
 
     def remove_thumb(self, thumb):
         """
