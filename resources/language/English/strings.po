@@ -202,3 +202,7 @@ msgstr ""
 msgctxt "#30035"
 msgid "AUTOGOAL"
 msgstr ""
+
+msgctxt "#30036"
+msgid "direct link to broadcast"
+msgstr ""

@@ -203,5 +203,8 @@ msgctxt "#30035"
 msgid "AUTOGOAL"
 msgstr "АВТОГОЛ"
 
+msgctxt "#30036"
+msgid "direct link to broadcast"
+msgstr "прямая ссылка на трансляцию"
 
 

@@ -3,8 +3,7 @@
 import xbmcgui
 import xbmc
 
-from resources.lib.livesport import LiveSport
-plugin = LiveSport()
+from resources.lib.livesport import plugin
 
 
 @plugin.action()
