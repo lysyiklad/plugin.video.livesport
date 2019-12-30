@@ -70,8 +70,6 @@ class LiveSport(simpleplugin.Plugin):
 
         self.load()
 
-
-
     @staticmethod
     def create_id(key):
         """
@@ -613,7 +611,7 @@ class LiveSport(simpleplugin.Plugin):
         Обновление с удалением файлов данных
         :return:
         """
-        xbmcgui.Dialog().notification(self.name, _('Plugin reset...'), self.icon, 500)
+        xbmcgui.Dialog().notification(self.name, _('Plugin data reset...'), self.icon, 500)
         self.log('START RESET DATA')
         self.remove_all()
         self.update()
@@ -859,13 +857,13 @@ class LiveSport(simpleplugin.Plugin):
 
                 # Light|Dark|Blue|Transparent
 
-                if theme_artwork == 0:      # Light
+                if theme_artwork == 0:  # Light
                     art.set_light_theme()
-                elif theme_artwork == 1:    # Dark
+                elif theme_artwork == 1:  # Dark
                     art.set_dark_theme()
-                elif theme_artwork == 2:    # Blue
+                elif theme_artwork == 2:  # Blue
                     art.set_blue_theme()
-                elif theme_artwork == 3:    # Transparent
+                elif theme_artwork == 3:  # Transparent
                     art.set_transparent_theme()
                 else:
                     self.logd('_parse_listing', 'error set artwork theme')
@@ -1117,11 +1115,17 @@ class LiveSport(simpleplugin.Plugin):
 
         l = []
 
+        art = {
+            'icon': self.get(id_, 'icon'),
+            'thumb': self.get(id_, 'thumb'),
+            'poster': self.get(id_, 'poster'),
+            'fanart': self.get(id_, 'fanart'),
+        }
+
         l.append({'label': u'{}       {}'.format(self.time_to_local(self.get(id_, 'date')).strftime('%d.%m %H:%M'),
                                                  self.get(id_, 'league')),
                   'info': {'video': {'title': title, 'plot': plot}},
-                  'icon': self.get(id_, 'icon'),
-                  'fanart': self.get(id_, 'fanart'),
+                  'art': art,
                   'url': '',
                   'is_playable': False,
                   'is_folder': False})
@@ -1129,8 +1133,7 @@ class LiveSport(simpleplugin.Plugin):
         l.append({'label': u'[B]{}    {} : {}    {} [/B]'.format(self.get(id_, 'command1'), info_mini['scorel'],
                                                                  info_mini['scorer'], self.get(id_, 'command2')),
                   'info': {'video': {'title': title, 'plot': plot}},
-                  'icon': self.get(id_, 'icon'),
-                  'fanart': self.get(id_, 'fanart'),
+                  'art': art,
                   'url': '',
                   'is_playable': False,
                   'is_folder': False})
@@ -1161,17 +1164,13 @@ class LiveSport(simpleplugin.Plugin):
                 if label:
                     l.append({'label': label,
                               'info': {'video': {'title': title, 'plot': plot}},
-                              'thumb': icon,
-                              'icon': icon,
-                              'fanart': self.get(id_, 'fanart'),
-                              'art': {'icon': icon, 'thumb': icon, },
+                              'art': art,
                               'url': self.get_url(action='play', href=link['href'], id=id_),
                               'is_playable': True})
             else:
                 l.append({'label': link['label'],
                           'info': {'video': {'title': title, 'plot': plot}},
-                          'icon': self.get(id_, 'icon'),
-                          'fanart': self.get(id_, 'fanart'),
+                          'art': art,
                           'url': '',
                           'is_playable': False,
                           'is_folder': False})
@@ -1179,7 +1178,7 @@ class LiveSport(simpleplugin.Plugin):
         if len(l) == 3:
             l.append({'label': _('Stream information will be available 30 minutes prior to the begining of an event.'),
                       'info': {'video': {'title': self._site, 'plot': self._site}},
-                      'icon': self.icon,
+                      'art': art,
                       'url': self.get_url(action='play', href=URL_NOT_LINKS),
                       'is_playable': True})
 
@@ -1214,13 +1213,22 @@ class LiveSport(simpleplugin.Plugin):
         if params['sort'] != 'offline':
             l.append({'label': '[UPPERCASE][B][COLOR FF0084FF][{}][/COLOR][/UPPERCASE][/B]'.format(_('Refresh')),
                       'url': self.get_url(action='listing', sort=params['sort']),
-                      'icon': os.path.join(self.dir('media'), 'refresh.png')})
+                      'poster': os.path.join(self.dir('media'), 'refresh.png'),
+                      'art': {
+                          'thumb': os.path.join(self.dir('media'), 'refresh.png'),
+                          'poster': os.path.join(self.dir('media'), 'refresh.png'),
+                          'fanart': self.fanart,
+                          'icon': os.path.join(self.dir('media'), 'refresh.png'),
+                      },
+                      'info': {
+                          'video': {
+                              'plot': _('Updating Lists'),
+                          }
+                      },
+                      })
         # return l + self._get_listing(params=params)
         return self.create_listing(l + self._get_listing(params=params),
                                    content='movies',
-                                   #    view_mode=55,
-                                   #    sort_methods=(
-                                   #        xbmcplugin.SORT_METHOD_DATEADDED, xbmcplugin.SORT_METHOD_VIDEO_RATING),
                                    cache_to_disk=False)
 
     def format_timedelta(self, dt, pref):
@@ -1305,8 +1313,8 @@ class LiveSport(simpleplugin.Plugin):
                         '%d.%m %H:%M' if self.get_setting('is_date_item') else '%H:%M')
 
                 label = '[COLOR %s]%s[/COLOR] - [B]%s[/B]    %s' % (status, lab, item['label'],
-                                                                     item['league'] if self.get_setting(
-                                                                         'is_league_item') else '')
+                                                                    item['league'] if self.get_setting(
+                                                                        'is_league_item') else '')
 
                 plot = title + '\n' + plot + '\n\n' + self._site
 
@@ -1349,4 +1357,3 @@ class LiveSport(simpleplugin.Plugin):
 
 plugin = LiveSport()
 _ = plugin.initialize_gettext()
-

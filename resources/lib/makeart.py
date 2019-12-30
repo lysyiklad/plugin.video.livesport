@@ -155,7 +155,7 @@ class ArtWorkFootBall(object):
         return self._data['logo_away']
 
     def file(self, type):
-        return os.path.join(self.plugin.dir('thumb'), '%s_%s.png' % (type, str(self._data['id'])))
+        return os.path.join(self.plugin.dir('thumb'), '%s_%s_%s.png' % (type, self._theme, str(self._data['id'])))
 
     def font(self, file, size):
         return ImageFont.truetype(os.path.join(self.plugin.dir('font'), file), size)
@@ -241,7 +241,12 @@ class ArtWorkFootBall(object):
         return self._create_art('thumb', background)
 
     def create_fanart(self, background=None):
+        if background is not None:
+            theme = self._theme
+            self._theme = ''
         fanart = self._create_art('fanart', background)
+        if background is not None:
+            self._theme = theme
         return fanart
 
     def set_dark_theme(self):

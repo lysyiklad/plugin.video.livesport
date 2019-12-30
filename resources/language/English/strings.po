@@ -193,7 +193,7 @@ msgid "prebuffering..."
 msgstr ""
 
 msgctxt "#30024"
-msgid "Plugin reset..."
+msgid "Plugin data reset..."
 msgstr ""
 
 msgctxt "#30025"
@@ -242,4 +242,8 @@ msgstr ""
 
 msgctxt "#30036"
 msgid "direct link to broadcast"
+msgstr ""
+
+msgctxt "#30037"
+msgid "Updating Lists"
 msgstr ""

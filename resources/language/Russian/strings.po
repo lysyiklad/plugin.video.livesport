@@ -193,7 +193,7 @@ msgid "prebuffering..."
 msgstr "пребуферизация..."
 
 msgctxt "#30024"
-msgid "Plugin reset..."
+msgid "Plugin data reset..."
 msgstr "Сброс данных плагина..."
 
 msgctxt "#30025"
@@ -243,5 +243,9 @@ msgstr "АВТОГОЛ"
 msgctxt "#30036"
 msgid "direct link to broadcast"
 msgstr "прямая ссылка на трансляцию"
+
+msgctxt "#30037"
+msgid "Updating Lists"
+msgstr "Обновление списков"
 
 
