@@ -70,6 +70,8 @@ class LiveSport(simpleplugin.Plugin):
 
         self.load()
 
+
+
     @staticmethod
     def create_id(key):
         """
@@ -616,7 +618,7 @@ class LiveSport(simpleplugin.Plugin):
         self.remove_all()
         self.update()
         self.log('END RESET DATA')
-        # xbmc.executebuiltin('Dialog.Close(all,true)')
+        xbmc.executebuiltin('Dialog.Close(all,true)')
         xbmc.executebuiltin('Container.Refresh()')
 
     def geturl_isfolder_isplay(self, id, href):
@@ -851,19 +853,22 @@ class LiveSport(simpleplugin.Plugin):
 
                 theme_artwork = self.get_setting('theme_artwork')
 
+                self.log(theme_artwork)
+
+                art.language = self._language
+
                 # Light|Dark|Blue|Transparent
 
-                if theme_artwork == _('Light'):
+                if theme_artwork == 0:      # Light
                     art.set_light_theme()
-                elif theme_artwork == _('Dark'):
+                elif theme_artwork == 1:    # Dark
                     art.set_dark_theme()
-                elif theme_artwork == _('Blue'):
+                elif theme_artwork == 2:    # Blue
                     art.set_blue_theme()
-                elif theme_artwork == _('Transparent'):
+                elif theme_artwork == 3:    # Transparent
                     art.set_transparent_theme()
                 else:
-                    self.logd('_parse_listing',
-                              'error set artwork theme')
+                    self.logd('_parse_listing', 'error set artwork theme')
                     art.set_light_theme()
 
                 if self.get_setting('is_thumb'):
@@ -1231,6 +1236,10 @@ class LiveSport(simpleplugin.Plugin):
         Возвращаем список для корневой виртуальной папки
         :return:
         """
+
+        # import web_pdb
+        # web_pdb.set_trace()
+
         filter_ = params['sort']
 
         listing = []
@@ -1240,9 +1249,6 @@ class LiveSport(simpleplugin.Plugin):
         self.logd('_get_listing()', '%s' % self.time_to_local(now_utc))
 
         center = self._get_match_center_mini()
-
-        # import web_pdb
-        # web_pdb.set_trace()
 
         try:
             for item in list(self._listing.values()):
@@ -1343,3 +1349,4 @@ class LiveSport(simpleplugin.Plugin):
 
 plugin = LiveSport()
 _ = plugin.initialize_gettext()
+

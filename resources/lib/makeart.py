@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 
+from __future__ import unicode_literals
+from __future__ import print_function
 from __future__ import division
 from future import standard_library
 
@@ -7,7 +9,8 @@ standard_library.install_aliases()
 from builtins import str
 from builtins import object
 import os
-import urllib.request, urllib.error, urllib.parse
+#import urllib.request, urllib.error, urllib.parse
+import requests
 import io
 from PIL import Image, ImageDraw, ImageFont
 import datetime
@@ -67,32 +70,36 @@ def _get_indent_left_for_center(text, width_frame, font):
     return int((width_frame - w) / 2)
 
 
-def _http_get_image(url):
-    """
-    :param url:
-    :return:
-    """
-    try:
-        req = urllib.request.Request(url=url)
-        req.add_header('User-Agent',
-                       'Mozilla/5.0 (Windows NT 6.1; Trident/7.0; rv:11.0) like Gecko')
-        req.add_header('Content-Type',
-                       'image/png')
+# def _http_get_image(url):
+#     """
+#     :param url:
+#     :return:
+#     """
+#     try:
+#         req = urllib.request.Request(url=url)
+#         req.add_header('User-Agent',
+#                        'Mozilla/5.0 (Windows NT 6.1; Trident/7.0; rv:11.0) like Gecko')
+#         req.add_header('Content-Type',
+#                        'image/png')
+#
+#         resp = urllib.request.urlopen(req, timeout=10)
+#         http = resp.read()
+#         resp.close()
+#         return http
+#     except Exception as e:
+#         raise Exception('ERROR GET HTTP LOGO [%s] - %s' % (e, url))
+#
+#
+# def _open_url_image(url):
+#     fd = _http_get_image(url)
+#     image_file = io.BytesIO(fd)
+#     image_file.seek(0)
+#     ic1 = Image.open(image_file)
+#     return ic1
 
-        resp = urllib.request.urlopen(req, timeout=10)
-        http = resp.read()
-        resp.close()
-        return http
-    except Exception as e:
-        raise Exception('ERROR GET HTTP LOGO [%s] - %s' % (e, url))
-
-
-def _open_url_image(url):
-    fd = _http_get_image(url)
-    image_file = io.BytesIO(fd)
-    image_file.seek(0)
-    ic1 = Image.open(image_file)
-    return ic1
+def _get_http_content(url):
+    headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; Trident/7.0; rv:11.0) like Gecko'}
+    return requests.get(url, headers=headers).content
 
 
 class ArtWorkFootBall(object):
@@ -103,6 +110,7 @@ class ArtWorkFootBall(object):
         self.color_font = (0, 0, 0)
         # dark light transparent
         self._theme = 'light'
+        self.language = 'English'  # Russian English
 
     def log(self, msg):
         if self._plugin is not None:
@@ -118,11 +126,17 @@ class ArtWorkFootBall(object):
 
     @property
     def weekday(self):
-        return WEEKDAY[self._data['date'].weekday()]
+        if self.language == 'Russian':
+            return WEEKDAY[self._data['date'].weekday()]
+        else:
+            return self._data['date'].strftime('%A')
 
     @property
     def month(self):
-        return u'%s %s %s' % (self._data['date'].day, MONTHS[self._data['date'].month - 1], self._data['date'].year)
+        if self.language == 'Russian':
+            return u'%s %s %s' % (self._data['date'].day, MONTHS[self._data['date'].month - 1], self._data['date'].year)
+        else:
+            return self._data['date'].strftime('%H %B %Y')
 
     @property
     def time(self):
@@ -160,8 +174,10 @@ class ArtWorkFootBall(object):
 
     def _paste_logo(self, type, ifon):
         try:
-            ihome = _open_url_image(self.logo_home)
-            iaway = _open_url_image(self.logo_away)
+            # ihome = _open_url_image(self.logo_home)
+            # iaway = _open_url_image(self.logo_away)
+            ihome = Image.open(io.BytesIO(_get_http_content(self.logo_home)))
+            iaway = Image.open(io.BytesIO(_get_http_content(self.logo_away)))
         except Exception as e:
             self.log('ERROR PASTE LOGO [%s] - %s - %s' %
                      (e, self.logo_home, self.logo_away))
