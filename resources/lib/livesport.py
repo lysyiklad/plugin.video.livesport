@@ -7,10 +7,10 @@ from __future__ import division
 from future import standard_library
 
 standard_library.install_aliases()
-import urllib.parse
-import urllib.error
-import urllib.request
-# import requests
+# import urllib.parse
+# import urllib.error
+# import urllib.request
+import requests
 from . import simpleplugin, makeart
 import xbmcgui
 import xbmc
@@ -20,16 +20,19 @@ import dateutil
 import bs4
 from urllib.parse import urlparse
 from collections import OrderedDict
-import pickle
+#import pickle
 import os
 import json
 import datetime
 from builtins import range
 from builtins import str
 
-LISTING_PICKLE = 'listing.pickle'
-
 URL_NOT_LINKS = 'https://www.ixbt.com/multimedia/video-methodology/bitrates/avc-1080-25p/1080-25p-10mbps.mp4'
+
+HEADERS_HTTP = {'User-Agent':
+                'Mozilla/4.0 (compatible; MSIE 8.0; Windows NT 5.1; Trident/4.0; Mozilla/4.0'
+                ' (compatible; MSIE 6.0; Windows NT 5.1; SV1) ; .NET CLR 1.1.4322; .NET CLR 2.0.50727; '
+                '.NET CLR 3.0.4506.2152; .NET CLR 3.5.30729; .NET4.0C)'}
 
 
 def file_read(file):
@@ -54,7 +57,6 @@ class LiveSport(simpleplugin.Plugin):
             os.mkdir(self.dir('thumb'))
 
         self._site = self.get_setting('url_site')
-        self._listing_pickle = os.path.join(self.profile_dir, LISTING_PICKLE)
         self.settings_changed = False
         self.stop_update = False
 
@@ -68,7 +70,11 @@ class LiveSport(simpleplugin.Plugin):
             self._site = self.get_setting('url_site')
         global _
 
+        # import web_pdb
+        # web_pdb.set_trace()
+
         self.load()
+        #self._load_leagues()
 
     @staticmethod
     def create_id(key):
@@ -96,16 +102,16 @@ class LiveSport(simpleplugin.Plugin):
         path = "plugin://program.plexus/?mode=2&url=" + url.geturl() + "&name=Sopcast"
         return path
 
-    @staticmethod
-    def _get_response_info(response):
-        response_info = ['Response info',
-                         'Status code: {0}'.format(response.code)]
-        if response.code != 200:
-            raise Exception('Error (%s) в %s ' %
-                            (response.code, response.geturl()))
-        response_info.append('URL: {0}'.format(response.geturl()))
-        response_info.append('Info: {0}'.format(response.info()))
-        return '\n'.join(response_info)
+    # @staticmethod
+    # def _get_response_info(response):
+    #     response_info = ['Response info',
+    #                      'Status code: {0}'.format(response.code)]
+    #     if response.code != 200:
+    #         raise Exception('Error (%s) в %s ' %
+    #                         (response.code, response.geturl()))
+    #     response_info.append('URL: {0}'.format(response.geturl()))
+    #     response_info.append('Info: {0}'.format(response.info()))
+    #     return '\n'.join(response_info)
 
     @property
     def date_scan(self):
@@ -123,35 +129,58 @@ class LiveSport(simpleplugin.Plugin):
 
     def load(self):
         try:
-            if os.path.exists(self._listing_pickle):
-                with open(self._listing_pickle, 'rb') as f:
-                    self._date_scan, self._listing = pickle.load(f)
+            with self.get_storage() as storage:
+                self._listing = storage['listing']
+                self._date_scan = storage['date_scan']
         except Exception as e:
-            self.logd('ERROR load', str(e))
+            self.logd('ERROR load', e)
 
     def dump(self):
-        with open(self._listing_pickle, 'wb') as f:
-            pickle.dump([self.date_scan, self._listing], f)
+        with self.get_storage() as storage:
+            storage['listing'] = self._listing
+            storage['date_scan'] = self._date_scan
 
-    def http_get(self, url):
+    # def http_get(self, url):
+    #     try:
+    #         req = urllib.request.Request(url=url)
+    #         req.add_header('User-Agent',
+    #                        'Mozilla/4.0 (compatible; MSIE 8.0; Windows NT 5.1; Trident/4.0; Mozilla/4.0'
+    #                        ' (compatible; MSIE 6.0; Windows NT 5.1; SV1) ; .NET CLR 1.1.4322; .NET CLR 2.0.50727; '
+    #                        '.NET CLR 3.0.4506.2152; .NET CLR 3.5.30729; .NET4.0C)')
+    #
+    #         response = urllib.request.urlopen(req, timeout=5)
+    #         self.log(self._get_response_info(response))
+    #         html = response.read()
+    #         response.close()
+    #         return html
+    #     except Exception as e:
+    #         # xbmcgui.Dialog().notification(self.name, 'HTTP ERROR %s' % str(e),
+    #         #                             xbmcgui.NOTIFICATION_ERROR, 2000)
+    #         err = '*** HTTP ERROR: %s ' % str(e)
+    #         self.log(err)
+    #         return ''
+
+    def get_http(self, url):
         try:
-            req = urllib.request.Request(url=url)
-            req.add_header('User-Agent',
-                           'Mozilla/4.0 (compatible; MSIE 8.0; Windows NT 5.1; Trident/4.0; Mozilla/4.0'
-                           ' (compatible; MSIE 6.0; Windows NT 5.1; SV1) ; .NET CLR 1.1.4322; .NET CLR 2.0.50727; '
-                           '.NET CLR 3.0.4506.2152; .NET CLR 3.5.30729; .NET4.0C)')
+            self.log('HTTP GET - URL {}'.format(url))
+            r = requests.get(url, headers=HEADERS_HTTP, timeout=10)
+            self.log(r.status_code)
+            for it in r.headers.items():
+                self.log('{}: {}'.format(it[0], it[1]))
+            return r
+        except requests.exceptions.ReadTimeout:
+            err = 'HTTP ERROR: Read timeout occured'
+        except requests.exceptions.ConnectTimeout:
+            err = 'HTTP ERROR: Connection timeout occured!'
+        except requests.exceptions.ConnectionError:
+            err = 'HTTP ERROR: Seems like dns lookup failed..'
+        except requests.exceptions.HTTPError as err:
+            err = 'HTTP ERROR: HTTP Error occured'
+            err += 'Response is: {content}'.format(content=err.response.content)
 
-            response = urllib.request.urlopen(req, timeout=5)
-            self.log(self._get_response_info(response))
-            html = response.read()
-            response.close()
-            return html
-        except Exception as e:
-            # xbmcgui.Dialog().notification(self.name, 'HTTP ERROR %s' % str(e),
-            #                             xbmcgui.NOTIFICATION_ERROR, 2000)
-            err = '*** HTTP ERROR: %s ' % str(e)
-            self.log(err)
-            return ''
+        self.log(err)
+        xbmcgui.Dialog().notification(self.name, err, self.icon, 2000)
+        return ''
 
     def get_listing(self):
         """
@@ -199,7 +228,8 @@ class LiveSport(simpleplugin.Plugin):
         if not links or not self.date_scan or tsn > self.get_setting('delta_scan') or tsn > dt:  # and tnd < dt):
             self.logd('links - id - %s : time now date - %s time scan now - %s' %
                       (id, tnd, tsn), links)
-            html = self.http_get(self.get(id, 'url_links'))
+            #html = self.http_get(self.get(id, 'url_links'))
+            html = self.get_http(self.get(id, 'url_links')).content
             if not html:
                 self.logd('links', 'not html')
                 return links
@@ -237,7 +267,8 @@ class LiveSport(simpleplugin.Plugin):
         # import web_pdb
         # web_pdb.set_trace()
 
-        html = self.http_get(self._site)
+        #html = self.http_get(self._site)
+        html = self.get_http(self._site).content
 
         # self.log(html)
 
@@ -301,8 +332,7 @@ class LiveSport(simpleplugin.Plugin):
 
         self.log('***** 5')
 
-        self._listing = OrderedDict(
-            sorted(list(self._listing.items()), key=lambda t: t[1]['date']))
+        self._listing = OrderedDict(sorted(list(self._listing.items()), key=lambda t: t[1]['date']))
 
         self._date_scan = self.time_now_utc()
         self.dump()
@@ -326,9 +356,8 @@ class LiveSport(simpleplugin.Plugin):
             if self.settings_changed:
                 self.logd('is_update', 'True - self.settings_changed')
                 return True
-            if not os.path.exists(self._listing_pickle):
-                self.logd(
-                    'is_update', 'True - not os.path.exists(self._listing_pickle)')
+            if not os.path.exists(os.path.join(self.profile_dir, 'storage.pcl')):
+                self.logd('is_update', 'True - not os.path.exists(storage.pcl)')
                 return True
             if not self._listing:
                 self.logd('is_update', 'True - not self._listing')
@@ -375,17 +404,19 @@ class LiveSport(simpleplugin.Plugin):
             if not path:
                 return None
             try:
+
                 if urlparse(path).port == 6878:
 
                     progress.create('Ace Stream Engine', self.name)
 
-                    self.log('start acestream play')
+                    self.log('start acestream play - host - {} - port {}'.format(urlparse(path).hostname,
+                                                                                 urlparse(path).port))
 
-                    as_url = 'http://' + '127.0.0.1' + ':' + '6878' + '/ace/getstream?id=' + \
+                    as_url = 'http://' + urlparse(path).hostname + ':' + '6878' + '/ace/getstream?id=' + \
                              urlparse(href).netloc + '&format=json'  # &_idx=" + str(ep)
 
-                    json = eval(self.http_get(as_url).replace(b'null', b'"null"'))["response"]
-                    self.log(type(json))
+                    # json = eval(self.http_get(as_url).replace(b'null', b'"null"'))["response"]
+                    json = requests.get(as_url).json()["response"]
                     self.log(json)
                     stat_url = json["stat_url"]
                     self.logd('stat_url', stat_url)
@@ -396,7 +427,8 @@ class LiveSport(simpleplugin.Plugin):
 
                     for i in range(30):
                         xbmc.sleep(1000)
-                        j = eval(self.http_get(stat_url).replace(b'null', b'"null"'))["response"]
+                        # j = eval(self.http_get(stat_url).replace(b'null', b'"null"'))["response"]
+                        j = requests.get(stat_url).json()["response"]
                         if j == {}:
                             progress.update(i * 3, message=_('wait...'))
                         else:
@@ -416,7 +448,7 @@ class LiveSport(simpleplugin.Plugin):
                     if i == 29:
                         xbmcgui.Dialog().notification(
                             self.name, _('Torrent not available or invalid!'), self.icon, 500)
-                        self.http_get(stop_url)
+                        self.get_http(stop_url)
 
                     progress.close()
                     xbmc.sleep(1000)
@@ -540,11 +572,18 @@ class LiveSport(simpleplugin.Plugin):
             pic = os.path.join(self.dir('thumb'), pic)
             self.remove_thumb(pic)
         fs = os.listdir(self.profile_dir)
-        for f in fs:
-            if f != 'settings.xml' and f != 'thumb' and f != '__gettext__.pcl':
-                f = os.path.join(self.profile_dir, f)
-                os.remove(f)
+        self._date_scan = None
+        self._listing.clear()
+        self.dump()
+        with self.get_storage() as storage:
+            del storage['leagues']
         self._load_leagues()
+        self.set_setting('selected_leagues', b'0')
+        # for f in fs:
+        #     if f != 'settings.xml' and f != 'thumb' and f != '__gettext__.pcl':
+        #         f = os.path.join(self.profile_dir, f)
+        #         os.remove(f)
+        # self._load_leagues()
 
     def get_path_acestream(self, href):
         """
@@ -616,7 +655,7 @@ class LiveSport(simpleplugin.Plugin):
         self.remove_all()
         self.update()
         self.log('END RESET DATA')
-        xbmc.executebuiltin('Dialog.Close(all,true)')
+        #xbmc.executebuiltin('Dialog.Close(all,true)')
         xbmc.executebuiltin('Container.Refresh()')
 
     def geturl_isfolder_isplay(self, id, href):
@@ -643,9 +682,8 @@ class LiveSport(simpleplugin.Plugin):
         return False
 
     def create_listing_categories(self):
-        self.update()
+        #self.update()
         listing = [
-            # {'label': '[UPPERCASE][B][COLOR FF0084FF][{}][/COLOR][/B][/UPPERCASE]'.format(_('League Choice')), 'url': self.get_url(action='select_matches')},
             {'label': '[UPPERCASE][COLOR FFFF0000][B]{}[/B][/COLOR][/UPPERCASE]'.format(_('Live')),
              'icon': os.path.join(self.dir('media'), 'live.png'),
              'fanart': self.fanart,
@@ -696,17 +734,10 @@ class LiveSport(simpleplugin.Plugin):
         #                     cache_to_disk=False)
 
     def _load_leagues(self):
-        file_pickle = os.path.join(self.profile_dir, 'leagues.pickle')
-        if os.path.exists(file_pickle):
-            with open(file_pickle, 'r') as f:
-                return pickle.load(f)
-        else:
-            data = [_('All'), ]
-            with open(file_pickle, 'wt') as f:
-                f.write(pickle.dumps(data, 0))
-            with open(file_pickle, 'r') as f:
-                self.set_setting('selected_leagues', '0')
-                return pickle.load(f)
+        with self.get_storage() as storage:
+            if storage.get('leagues', None) is None:
+                storage['leagues'] = [_('All'), ]
+            return storage['leagues']
 
     def _get_selected_leagues(self):
         sl = str(self.get_setting('selected_leagues'))
@@ -724,8 +755,7 @@ class LiveSport(simpleplugin.Plugin):
         if result is not None:
             if not len(result):
                 result.append(0)
-            self.set_setting('selected_leagues', ','.join(str(x)
-                                                          for x in result))
+            self.set_setting('selected_leagues', ','.join(str(x) for x in result))
             self.on_settings_changed()
 
     def _parse_listing(self, html, progress=None):
@@ -785,12 +815,11 @@ class LiveSport(simpleplugin.Plugin):
             if league not in leagues:
                 leagues.append(league)
                 index = leagues.index(league)
-                with open(os.path.join(self.profile_dir, 'leagues.pickle'), 'wt') as f:
-                    f.write(pickle.dumps(leagues, 0))
+                with self.get_storage() as storage:
+                    storage['leagues'] = leagues
                 sl = self._get_selected_leagues()
                 sl.append(index)
-                self.set_setting('selected_leagues',
-                                 ','.join(str(x) for x in sl))
+                self.set_setting('selected_leagues', ','.join(str(x) for x in sl))
             else:
                 if not selected_leagues or not selected_leagues[0]:
                     self.log('no filter sports tournament')
@@ -927,10 +956,12 @@ class LiveSport(simpleplugin.Plugin):
         return result
 
     def _resolve_flash_href(self, href):
-        html = self.http_get(href)
+        #html = self.http_get(href)
+        html = self.get_http(href).content
         soup = bs4.BeautifulSoup(html, 'html.parser')
         tag_iframe = soup.find('iframe')
-        src_html = self.http_get(tag_iframe['src'])
+        #src_html = self.http_get(tag_iframe['src'])
+        src_html = self.get_http(tag_iframe['src']).content
         if src_html is None:
             return ''
         ilink = src_html.find(b'var videoLink')
@@ -1185,9 +1216,13 @@ class LiveSport(simpleplugin.Plugin):
         return l
 
     def _get_match_center_mini(self):
-        center = self.http_get(
+        # center = self.http_get(
+        #     'https://moon.livesport.ws/engine/modules/sports/sport_template_loader.php?'
+        #     'from=showfull&template=match/main_match_center_mini_refresher')
+
+        center = self.get_http(
             'https://moon.livesport.ws/engine/modules/sports/sport_template_loader.php?'
-            'from=showfull&template=match/main_match_center_mini_refresher')
+            'from=showfull&template=match/main_match_center_mini_refresher').content
 
         center = center.decode('unicode-escape')
         center = center[center.find('{'):]
@@ -1247,6 +1282,7 @@ class LiveSport(simpleplugin.Plugin):
 
         # import web_pdb
         # web_pdb.set_trace()
+        self.update()
 
         filter_ = params['sort']
 
