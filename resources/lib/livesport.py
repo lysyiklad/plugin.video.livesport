@@ -145,16 +145,19 @@ class LiveSport(simpleplugin.Plugin):
         if selected is not None and selected != selected_old:
             self._set_selected_leagues(selected)
             self.logd('_selected_leagues', selected)
+           # self.dump()
             with self.get_storage() as storage:
                 storage['leagues'] = self._leagues
+
             self.on_settings_changed()
 
     def _get_selected_leagues(self):
         return [index for index, item in enumerate(self._leagues.items()) if item[1]]
 
     def _add_leagues(self, league):
-        if league not in self._leagues:
+        if self._leagues.get(league, None) is None:
             self._leagues[league] = True
+           # self.dump()
             with self.get_storage() as storage:
                 storage['leagues'] = self._leagues
 
@@ -252,8 +255,7 @@ class LiveSport(simpleplugin.Plugin):
         :return:
         """
 
-        self.logd('plugin.update - self.settings_changed',
-                  self.settings_changed)
+        self.logd('plugin.update - self.settings_changed',  self.settings_changed)
 
         if not self.is_update():
             return
@@ -271,7 +273,6 @@ class LiveSport(simpleplugin.Plugin):
         # import web_pdb
         # web_pdb.set_trace()
 
-        # html = self.http_get(self._site)
         html = self.get_http(self._site).content
 
         # self.log(html)
@@ -282,10 +283,7 @@ class LiveSport(simpleplugin.Plugin):
         # html = file_read(file_html)
 
         self.log('***** 1')
-
         self._listing = self._parse_listing(html, progress=progress)
-        self.log(self._leagues)
-
         self.log('***** 2')
 
         if not self._listing:
@@ -610,6 +608,8 @@ class LiveSport(simpleplugin.Plugin):
         return path
 
     def on_settings_changed(self):
+        with self.get_storage() as storage:
+            self._leagues = storage['leagues']
         self.settings_changed = True
         xbmcgui.Dialog().notification(self.name, _('Changing settings ...'), self.icon, 1000)
         self.update()
@@ -652,8 +652,22 @@ class LiveSport(simpleplugin.Plugin):
             return True
         return False
 
+    def create_listing_extra(self):
+        listing = [
+            {'label': '[UPPERCASE][B]{}[/B][/UPPERCASE]'.format(_('Leagues Choice...')),
+             'icon': os.path.join(self.dir('media'), 'selectlegue.png'), 'fanart': self.fanart,
+             'url': self.get_url(action='select_leagues')},
+            {'label': '[UPPERCASE][B]{}[/B][/UPPERCASE]'.format(_('Plugin data reset...')),
+             'icon': os.path.join(self.dir('media'), 'reset.png'),
+             'fanart': self.fanart, 'url': self.get_url(action='reset')}
+        ]
+        return listing
+
     def create_listing_categories(self):
         listing = [
+            {'label': '[UPPERCASE][COLOR FF0084FF][B]{}[/B][/COLOR][/UPPERCASE]'.format(_('Extra')),
+             'icon': os.path.join(self.dir('media'), 'extra.png'), 'fanart': self.fanart,
+             'url': self.get_url(action='extra')},
             {'label': '[UPPERCASE][COLOR FFFF0000][B]{}[/B][/COLOR][/UPPERCASE]'.format(_('Live')),
              'icon': os.path.join(self.dir('media'), 'live.png'),
              'fanart': self.fanart,
@@ -736,8 +750,7 @@ class LiveSport(simpleplugin.Plugin):
 
         soup = bs4.BeautifulSoup(html, 'html.parser')
 
-        tag_matchs = soup.findAll(
-            'li', {'itemtype': 'http://data-vocabulary.org/Event'})
+        tag_matchs = soup.findAll('li', {'itemtype': 'http://data-vocabulary.org/Event'})
 
         total = len(tag_matchs)
         still = total
@@ -745,22 +758,22 @@ class LiveSport(simpleplugin.Plugin):
 
         for tag_match in tag_matchs:
 
-            # date_guest = tag_match.find('meta')['content']
             tag_a = tag_match.find('a')
             game = tag_a['title']
             id_ = int(tag_a['href'].split('/')[-1].split('-')[0])
 
-            icon_sport = tag_a.find('span', {'class': 'sport'}).find('img')[
-                'data-src']
+            icon_sport = tag_a.find('span', {'class': 'sport'}).find('img')['data-src']
 
             league = tag_a.find('span', {'class': 'competition'}).text
 
-            if league not in self._leagues:
-                self._add_leagues(league)
-            else:
+
+            if self._leagues.get(league, None) is not None:
                 if not self._leagues[league]:
                     still = still - 1
                     continue
+            else:
+                self._add_leagues(league)
+
 
             sport = os.path.basename(urlparse(icon_sport).path).split('.')[0]
 
@@ -1280,9 +1293,8 @@ class LiveSport(simpleplugin.Plugin):
                     lab = self.time_to_local(date_).strftime(
                         '%d.%m %H:%M' if self.get_setting('is_date_item') else '%H:%M')
 
-                label = '[COLOR %s]%s[/COLOR] - [B]%s[/B]    %s' % (status, lab, item['label'],
-                                                                    item['league'] if self.get_setting(
-                                                                        'is_league_item') else '')
+                label = '[COLOR %s]%s[/COLOR] - [B]%s[/B]    %s' % (
+                status, lab, item['label'], item['league'] if self.get_setting('is_league_item') else '')
 
                 plot = title + '\n' + plot + '\n\n' + self._site
 

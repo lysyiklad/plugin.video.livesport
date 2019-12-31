@@ -10,6 +10,10 @@ from resources.lib.livesport import plugin
 def root(params):
     return plugin.create_listing_categories()
 
+@plugin.action()
+def extra(params):
+    return plugin.create_listing_extra()
+
 
 @plugin.action()
 def listing(params):

@@ -247,3 +247,15 @@ msgstr ""
 msgctxt "#30037"
 msgid "Updating Lists"
 msgstr ""
+
+msgctxt "#30038"
+msgid "Show date in list item"
+msgstr ""
+
+msgctxt "#30039"
+msgid "Show tournament in list item"
+msgstr ""
+
+msgctxt "#30040"
+msgid "Extra"
+msgstr ""

@@ -248,4 +248,14 @@ msgctxt "#30037"
 msgid "Updating Lists"
 msgstr "Обновление списков"
 
+msgctxt "#30038"
+msgid "Show date in list item"
+msgstr "Показывать дату в элементе списка"
 
+msgctxt "#30039"
+msgid "Show tournament in list item"
+msgstr "Показывать турнир в элементе списка"
+
+msgctxt "#30040"
+msgid "Extra"
+msgstr "Дополнительно"

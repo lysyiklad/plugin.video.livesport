@@ -16,6 +16,8 @@ SETTING_UPDATE = [
     'is_pars_links',
     'is_noold_item',
     'is_http_link',
+    'is_date_item',
+    'is_league_item',
 ]
 
 
