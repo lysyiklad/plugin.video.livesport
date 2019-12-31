@@ -20,7 +20,7 @@ import dateutil
 import bs4
 from urllib.parse import urlparse
 from collections import OrderedDict
-#import pickle
+# import pickle
 import os
 import json
 import datetime
@@ -30,9 +30,9 @@ from builtins import str
 URL_NOT_LINKS = 'https://www.ixbt.com/multimedia/video-methodology/bitrates/avc-1080-25p/1080-25p-10mbps.mp4'
 
 HEADERS_HTTP = {'User-Agent':
-                'Mozilla/4.0 (compatible; MSIE 8.0; Windows NT 5.1; Trident/4.0; Mozilla/4.0'
-                ' (compatible; MSIE 6.0; Windows NT 5.1; SV1) ; .NET CLR 1.1.4322; .NET CLR 2.0.50727; '
-                '.NET CLR 3.0.4506.2152; .NET CLR 3.5.30729; .NET4.0C)'}
+                    'Mozilla/4.0 (compatible; MSIE 8.0; Windows NT 5.1; Trident/4.0; Mozilla/4.0'
+                    ' (compatible; MSIE 6.0; Windows NT 5.1; SV1) ; .NET CLR 1.1.4322; .NET CLR 2.0.50727; '
+                    '.NET CLR 3.0.4506.2152; .NET CLR 3.5.30729; .NET4.0C)'}
 
 
 def file_read(file):
@@ -48,6 +48,7 @@ class LiveSport(simpleplugin.Plugin):
 
     def __init__(self):
         super(LiveSport, self).__init__()
+        global _
         self._dir = {'media': os.path.join(self.path, 'resources', 'media'),
                      'font': os.path.join(self.path, 'resources', 'data', 'font'),
                      'lib': os.path.join(self.path, 'resources', 'lib'),
@@ -62,19 +63,19 @@ class LiveSport(simpleplugin.Plugin):
 
         self._date_scan = None  # Время сканирования в utc
         self._listing = OrderedDict()
+        self._leagues = OrderedDict()
+
         self._language = xbmc.getInfoLabel('System.Language')  # Russian English
 
         if self._language != 'Russian':
             self._site = os.path.join(self.get_setting('url_site'), 'en')
         else:
             self._site = self.get_setting('url_site')
-        global _
 
         # import web_pdb
         # web_pdb.set_trace()
 
         self.load()
-        #self._load_leagues()
 
     @staticmethod
     def create_id(key):
@@ -102,17 +103,6 @@ class LiveSport(simpleplugin.Plugin):
         path = "plugin://program.plexus/?mode=2&url=" + url.geturl() + "&name=Sopcast"
         return path
 
-    # @staticmethod
-    # def _get_response_info(response):
-    #     response_info = ['Response info',
-    #                      'Status code: {0}'.format(response.code)]
-    #     if response.code != 200:
-    #         raise Exception('Error (%s) в %s ' %
-    #                         (response.code, response.geturl()))
-    #     response_info.append('URL: {0}'.format(response.geturl()))
-    #     response_info.append('Info: {0}'.format(response.info()))
-    #     return '\n'.join(response_info)
-
     @property
     def date_scan(self):
         return self._date_scan
@@ -132,33 +122,47 @@ class LiveSport(simpleplugin.Plugin):
             with self.get_storage() as storage:
                 self._listing = storage['listing']
                 self._date_scan = storage['date_scan']
+                self._leagues = storage['leagues']
         except Exception as e:
-            self.logd('ERROR load', e)
+            self.logd('ERROR load data', e)
 
     def dump(self):
-        with self.get_storage() as storage:
-            storage['listing'] = self._listing
-            storage['date_scan'] = self._date_scan
+        try:
+            with self.get_storage() as storage:
+                storage['listing'] = self._listing
+                storage['date_scan'] = self._date_scan
+                storage['leagues'] = self._leagues
+        except Exception as e:
+            self.logd('ERROR dump data', e)
 
-    # def http_get(self, url):
-    #     try:
-    #         req = urllib.request.Request(url=url)
-    #         req.add_header('User-Agent',
-    #                        'Mozilla/4.0 (compatible; MSIE 8.0; Windows NT 5.1; Trident/4.0; Mozilla/4.0'
-    #                        ' (compatible; MSIE 6.0; Windows NT 5.1; SV1) ; .NET CLR 1.1.4322; .NET CLR 2.0.50727; '
-    #                        '.NET CLR 3.0.4506.2152; .NET CLR 3.5.30729; .NET4.0C)')
-    #
-    #         response = urllib.request.urlopen(req, timeout=5)
-    #         self.log(self._get_response_info(response))
-    #         html = response.read()
-    #         response.close()
-    #         return html
-    #     except Exception as e:
-    #         # xbmcgui.Dialog().notification(self.name, 'HTTP ERROR %s' % str(e),
-    #         #                             xbmcgui.NOTIFICATION_ERROR, 2000)
-    #         err = '*** HTTP ERROR: %s ' % str(e)
-    #         self.log(err)
-    #         return ''
+    def _selected_leagues(self):
+
+        selected_old = self._get_selected_leagues()
+
+        selected = xbmcgui.Dialog().multiselect(_('Choosing a Sports Tournament'), self._leagues.keys(),
+                                                preselect=selected_old)
+
+        if selected is not None and selected != selected_old:
+            self._set_selected_leagues(selected)
+            self.logd('_selected_leagues', selected)
+            with self.get_storage() as storage:
+                storage['leagues'] = self._leagues
+            self.on_settings_changed()
+
+    def _get_selected_leagues(self):
+        return [index for index, item in enumerate(self._leagues.items()) if item[1]]
+
+    def _add_leagues(self, league):
+        if league not in self._leagues:
+            self._leagues[league] = True
+            with self.get_storage() as storage:
+                storage['leagues'] = self._leagues
+
+    def _set_selected_leagues(self, selected):
+        for index, item in enumerate(self._leagues.items()):
+            self._leagues[item[0]] = False
+            if index in selected:
+                self._leagues[item[0]] = True
 
     def get_http(self, url):
         try:
@@ -228,7 +232,7 @@ class LiveSport(simpleplugin.Plugin):
         if not links or not self.date_scan or tsn > self.get_setting('delta_scan') or tsn > dt:  # and tnd < dt):
             self.logd('links - id - %s : time now date - %s time scan now - %s' %
                       (id, tnd, tsn), links)
-            #html = self.http_get(self.get(id, 'url_links'))
+            # html = self.http_get(self.get(id, 'url_links'))
             html = self.get_http(self.get(id, 'url_links')).content
             if not html:
                 self.logd('links', 'not html')
@@ -267,7 +271,7 @@ class LiveSport(simpleplugin.Plugin):
         # import web_pdb
         # web_pdb.set_trace()
 
-        #html = self.http_get(self._site)
+        # html = self.http_get(self._site)
         html = self.get_http(self._site).content
 
         # self.log(html)
@@ -280,6 +284,7 @@ class LiveSport(simpleplugin.Plugin):
         self.log('***** 1')
 
         self._listing = self._parse_listing(html, progress=progress)
+        self.log(self._leagues)
 
         self.log('***** 2')
 
@@ -303,17 +308,6 @@ class LiveSport(simpleplugin.Plugin):
 
         self.log('***** 3')
 
-        # if self.get_setting('is_pars_links'):
-        #     percent = 60
-        #     i = (40 // len(self._listing)) if len(self._listing) else 2
-        #     for val in self._listing.values():
-        #         percent += i
-        #         progress.update(percent, '%s: %s' %
-        #                         (_('link scanning'), self.name), val['label'])
-        #         self.links(val['id'], isdump=False)
-
-        self.log('***** 4')
-
         artwork = []
         for item in list(self._listing.values()):
             if item['thumb']:
@@ -330,7 +324,7 @@ class LiveSport(simpleplugin.Plugin):
             if f not in artwork:
                 self.remove_thumb(f)
 
-        self.log('***** 5')
+        self.log('***** 4')
 
         self._listing = OrderedDict(sorted(list(self._listing.items()), key=lambda t: t[1]['date']))
 
@@ -340,7 +334,7 @@ class LiveSport(simpleplugin.Plugin):
         progress.update(100, self.name, _('End update...'))
         xbmc.sleep(500)
 
-        self.log('***** 6')
+        self.log('***** 5')
 
         progress.close()
 
@@ -381,20 +375,6 @@ class LiveSport(simpleplugin.Plugin):
         """
         path = ''
         msg = ''
-
-        # self.logd('play', params)
-        # if 'href' not in params or not params['href']:
-        #     links = self.links(int(params['id']), isdump=True)
-        #     self.logd('play links', links)
-        #     for h in links:
-        #         if h['title'] == self.get_setting('play_engine').decode('utf-8'):
-        #             params['href'] = h['href']
-        #             break
-        #     if 'href' not in params or not params['href']:
-        #         msg = _('Resource Unavailable or Invalid!')
-        #         self.logd('play', msg)
-        #         xbmcgui.Dialog().notification(self.name, msg, self.icon, 500)
-        #         return None
 
         href = params['href']
         url = urlparse(href)
@@ -562,7 +542,7 @@ class LiveSport(simpleplugin.Plugin):
             if os.path.exists(thumb_cache):
                 os.remove(thumb_cache)
 
-    def remove_all(self):
+    def clear(self):
         """
 
         :return: 
@@ -574,16 +554,8 @@ class LiveSport(simpleplugin.Plugin):
         fs = os.listdir(self.profile_dir)
         self._date_scan = None
         self._listing.clear()
+        self._leagues.clear()
         self.dump()
-        with self.get_storage() as storage:
-            del storage['leagues']
-        self._load_leagues()
-        self.set_setting('selected_leagues', b'0')
-        # for f in fs:
-        #     if f != 'settings.xml' and f != 'thumb' and f != '__gettext__.pcl':
-        #         f = os.path.join(self.profile_dir, f)
-        #         os.remove(f)
-        # self._load_leagues()
 
     def get_path_acestream(self, href):
         """
@@ -639,8 +611,7 @@ class LiveSport(simpleplugin.Plugin):
 
     def on_settings_changed(self):
         self.settings_changed = True
-        xbmcgui.Dialog().notification(
-            self.name, _('Changing settings ...'), self.icon, 1000)  # 'Changing settings ...'
+        xbmcgui.Dialog().notification(self.name, _('Changing settings ...'), self.icon, 1000)
         self.update()
         self.settings_changed = False
         xbmc.executebuiltin('Container.Refresh()')
@@ -652,10 +623,10 @@ class LiveSport(simpleplugin.Plugin):
         """
         xbmcgui.Dialog().notification(self.name, _('Plugin data reset...'), self.icon, 500)
         self.log('START RESET DATA')
-        self.remove_all()
+        self.clear()
         self.update()
         self.log('END RESET DATA')
-        #xbmc.executebuiltin('Dialog.Close(all,true)')
+        # xbmc.executebuiltin('Dialog.Close(all,true)')
         xbmc.executebuiltin('Container.Refresh()')
 
     def geturl_isfolder_isplay(self, id, href):
@@ -682,7 +653,6 @@ class LiveSport(simpleplugin.Plugin):
         return False
 
     def create_listing_categories(self):
-        #self.update()
         listing = [
             {'label': '[UPPERCASE][COLOR FFFF0000][B]{}[/B][/COLOR][/UPPERCASE]'.format(_('Live')),
              'icon': os.path.join(self.dir('media'), 'live.png'),
@@ -733,31 +703,6 @@ class LiveSport(simpleplugin.Plugin):
         #                     #        xbmcplugin.SORT_METHOD_DATEADDED, xbmcplugin.SORT_METHOD_VIDEO_RATING),
         #                     cache_to_disk=False)
 
-    def _load_leagues(self):
-        with self.get_storage() as storage:
-            if storage.get('leagues', None) is None:
-                storage['leagues'] = [_('All'), ]
-            return storage['leagues']
-
-    def _get_selected_leagues(self):
-        sl = str(self.get_setting('selected_leagues'))
-        if not sl:
-            sl = '0'
-        return [int(x) for x in sl.split(',')]
-
-    def select_matches(self, params):
-
-        selected_leagues = self._get_selected_leagues()
-
-        result = xbmcgui.Dialog().multiselect(
-            _('Choosing a Sports Tournament'), self._load_leagues(), preselect=selected_leagues)
-
-        if result is not None:
-            if not len(result):
-                result.append(0)
-            self.set_setting('selected_leagues', ','.join(str(x) for x in result))
-            self.on_settings_changed()
-
     def _parse_listing(self, html, progress=None):
         """
         Парсим страницу для основного списка
@@ -773,10 +718,10 @@ class LiveSport(simpleplugin.Plugin):
                             icon: '',
                             poster: '',
                             fanart: '',
-                            icon1: '',
-                            command1: '',
-                            icon2: '',
-                            command2: '',
+                            icon_home: '',
+                            home: '',
+                            icon_guest: '',
+                            guest: '',
                             url_links: '',
                             href: [
                                     {
@@ -786,8 +731,6 @@ class LiveSport(simpleplugin.Plugin):
                         }
                     }
         """
-        leagues = self._load_leagues()
-        selected_leagues = self._get_selected_leagues()
 
         listing = {}
 
@@ -802,7 +745,7 @@ class LiveSport(simpleplugin.Plugin):
 
         for tag_match in tag_matchs:
 
-            # date_away = tag_match.find('meta')['content']
+            # date_guest = tag_match.find('meta')['content']
             tag_a = tag_match.find('a')
             game = tag_a['title']
             id_ = int(tag_a['href'].split('/')[-1].split('-')[0])
@@ -812,21 +755,12 @@ class LiveSport(simpleplugin.Plugin):
 
             league = tag_a.find('span', {'class': 'competition'}).text
 
-            if league not in leagues:
-                leagues.append(league)
-                index = leagues.index(league)
-                with self.get_storage() as storage:
-                    storage['leagues'] = leagues
-                sl = self._get_selected_leagues()
-                sl.append(index)
-                self.set_setting('selected_leagues', ','.join(str(x) for x in sl))
+            if league not in self._leagues:
+                self._add_leagues(league)
             else:
-                if not selected_leagues or not selected_leagues[0]:
-                    self.log('no filter sports tournament')
-                else:
-                    if not leagues.index(league) in selected_leagues:
-                        still = still - 1
-                        continue
+                if not self._leagues[league]:
+                    still = still - 1
+                    continue
 
             sport = os.path.basename(urlparse(icon_sport).path).split('.')[0]
 
@@ -858,10 +792,10 @@ class LiveSport(simpleplugin.Plugin):
             tags_div = tag_a.find(
                 'div', {'class': 'commands commands_match_center'}).findAll('div')
 
-            icon1 = tags_div[1].contents[1]['data-src'].replace('?18x18=1', '')
-            command1 = tags_div[0].text
-            icon2 = tags_div[1].contents[3]['data-src'].replace('?18x18=1', '')
-            command2 = tags_div[2].text
+            icon_home = tags_div[1].contents[1]['data-src'].replace('?18x18=1', '')
+            home = tags_div[0].text
+            icon_guest = tags_div[1].contents[3]['data-src'].replace('?18x18=1', '')
+            guest = tags_div[2].text
 
             icon = icon_sport
             poster = ''
@@ -873,10 +807,10 @@ class LiveSport(simpleplugin.Plugin):
                                               id=id_,
                                               date=self.time_to_local(date_utc),
                                               league=league,
-                                              home=command1,
-                                              away=command2,
-                                              logo_home=icon1,
-                                              logo_away=icon2)
+                                              home=home,
+                                              guest=guest,
+                                              logo_home=icon_home,
+                                              logo_guest=icon_guest)
 
                 theme_artwork = self.get_setting('theme_artwork')
 
@@ -929,10 +863,10 @@ class LiveSport(simpleplugin.Plugin):
             item['icon'] = icon
             item['poster'] = poster
             item['fanart'] = fanart
-            item['icon1'] = icon1
-            item['command1'] = command1
-            item['icon2'] = icon2
-            item['command2'] = command2
+            item['icon_home'] = icon_home
+            item['home'] = home
+            item['icon_guest'] = icon_guest
+            item['guest'] = guest
 
             item['url_links'] = url_links
             if 'href' is not item:
@@ -952,15 +886,14 @@ class LiveSport(simpleplugin.Plugin):
         txt = txt.strip()
         result = u'{1:<{0:}}'.format(
             column_width, txt[:column_width] if len(txt) > column_width else txt)
-        # print result.encode('utf-8')
         return result
 
     def _resolve_flash_href(self, href):
-        #html = self.http_get(href)
+        # html = self.http_get(href)
         html = self.get_http(href).content
         soup = bs4.BeautifulSoup(html, 'html.parser')
         tag_iframe = soup.find('iframe')
-        #src_html = self.http_get(tag_iframe['src'])
+        # src_html = self.http_get(tag_iframe['src'])
         src_html = self.get_http(tag_iframe['src']).content
         if src_html is None:
             return ''
@@ -1042,8 +975,8 @@ class LiveSport(simpleplugin.Plugin):
                 'status': 'title'
             })
 
-            home = self.get(id_, 'command1')
-            guest = self.get(id_, 'command2')
+            home = self.get(id_, 'home')
+            guest = self.get(id_, 'guest')
             lh = len(home)
             lg = len(guest)
             column_width_home = lh if lh >= lg else 2 * lg - lh
@@ -1161,8 +1094,8 @@ class LiveSport(simpleplugin.Plugin):
                   'is_playable': False,
                   'is_folder': False})
 
-        l.append({'label': u'[B]{}    {} : {}    {} [/B]'.format(self.get(id_, 'command1'), info_mini['scorel'],
-                                                                 info_mini['scorer'], self.get(id_, 'command2')),
+        l.append({'label': u'[B]{}    {} : {}    {} [/B]'.format(self.get(id_, 'home'), info_mini['scorel'],
+                                                                 info_mini['scorer'], self.get(id_, 'guest')),
                   'info': {'video': {'title': title, 'plot': plot}},
                   'art': art,
                   'url': '',
@@ -1280,8 +1213,6 @@ class LiveSport(simpleplugin.Plugin):
         :return:
         """
 
-        # import web_pdb
-        # web_pdb.set_trace()
         self.update()
 
         filter_ = params['sort']
@@ -1300,10 +1231,11 @@ class LiveSport(simpleplugin.Plugin):
                 info_match = self._get_mini_info_math(item['id_event'], center)
 
                 if not info_match:
-                    self.logd('_get_listing() - not info_match', item['label'])
+                    self.logd('_get_listing() if not info_match', item['label'])
                     continue
 
-                # self.logd(filter, info_match['status'])
+                # import web_pdb
+                # web_pdb.set_trace()
 
                 if not (filter_ is None or filter_ == 'all' or filter_ == 'live' or filter_ == 'offline'):
                     if filter_ != item['sport']:

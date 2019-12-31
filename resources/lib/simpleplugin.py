@@ -577,7 +577,7 @@ class Addon(object):
             message = str(message)        
         if isinstance(message, str):
             message = message.encode('utf-8')
-        xbmc.log('{0} [v.{1}]: {2}'.format(self.id, self.version, message), level)
+        xbmc.log(b'{0} [v.{1}]: {2}'.format(self.id, self.version, message), level)
 
     def log_notice(self, message, f):
         """
@@ -631,11 +631,10 @@ class Addon(object):
             message = message.encode('utf-8')
         if isinstance(func, bool):
             func = str(func)
-        if isinstance(message, str):
+        if isinstance(func, str):
             func = func.encode('utf-8')
         
-        xbmc.log(u'{0} [v.{1}]: <{2}> - {3}'.format(self.id,
-                                                 self.version, func, message),  xbmc.LOGDEBUG)
+        xbmc.log(b'{0} [v.{1}]: <{2}> - {3}'.format(self.id, self.version, func, message),  xbmc.LOGDEBUG)
 
     def get_storage(self, filename='storage.pcl'):
         """

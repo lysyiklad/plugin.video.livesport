@@ -34,8 +34,8 @@ def reset():
 
 
 @plugin.action()
-def select_matches(params):
-    plugin.select_matches(params)
+def select_leagues():
+    plugin._selected_leagues()
 
 
 if __name__ == '__main__':

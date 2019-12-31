@@ -30,13 +30,13 @@ SPECIFIC_ARTWORK_DATA = namedtuple('SPECIFIC_ARTWORK_DATA', [
     'league',
     'com_home',
     'vs',
-    'com_away',
+    'com_guest',
     'weekday',
     'month',
     'time',
     'size',
     'pos_home',
-    'pos_away',
+    'pos_guest',
     'size_font_league',
     'size_font_command',
     'size_font_time',
@@ -69,33 +69,6 @@ def _get_indent_left_for_center(text, width_frame, font):
     w, h = font.getsize(text)
     return int((width_frame - w) / 2)
 
-
-# def _http_get_image(url):
-#     """
-#     :param url:
-#     :return:
-#     """
-#     try:
-#         req = urllib.request.Request(url=url)
-#         req.add_header('User-Agent',
-#                        'Mozilla/5.0 (Windows NT 6.1; Trident/7.0; rv:11.0) like Gecko')
-#         req.add_header('Content-Type',
-#                        'image/png')
-#
-#         resp = urllib.request.urlopen(req, timeout=10)
-#         http = resp.read()
-#         resp.close()
-#         return http
-#     except Exception as e:
-#         raise Exception('ERROR GET HTTP LOGO [%s] - %s' % (e, url))
-#
-#
-# def _open_url_image(url):
-#     fd = _http_get_image(url)
-#     image_file = io.BytesIO(fd)
-#     image_file.seek(0)
-#     ic1 = Image.open(image_file)
-#     return ic1
 
 def _get_http_content(url):
     headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; Trident/7.0; rv:11.0) like Gecko'}
@@ -151,8 +124,8 @@ class ArtWorkFootBall(object):
         return self._data['logo_home']
 
     @property
-    def logo_away(self):
-        return self._data['logo_away']
+    def logo_guest(self):
+        return self._data['logo_guest']
 
     def file(self, type):
         return os.path.join(self.plugin.dir('thumb'), '%s_%s_%s.png' % (type, self._theme, str(self._data['id'])))
@@ -174,23 +147,21 @@ class ArtWorkFootBall(object):
 
     def _paste_logo(self, type, ifon):
         try:
-            # ihome = _open_url_image(self.logo_home)
-            # iaway = _open_url_image(self.logo_away)
             ihome = Image.open(io.BytesIO(_get_http_content(self.logo_home)))
-            iaway = Image.open(io.BytesIO(_get_http_content(self.logo_away)))
+            iguest = Image.open(io.BytesIO(_get_http_content(self.logo_guest)))
         except Exception as e:
             self.log('ERROR PASTE LOGO [%s] - %s - %s' %
-                     (e, self.logo_home, self.logo_away))
+                     (e, self.logo_home, self.logo_guest))
             ihome = Image.open(self.plugin.icon)
-            iaway = Image.open(self.plugin.icon)
-            # ic2.thumbnail(ARTWORK_DATA[type]['size_thumbaway'], Image.ANTIALIAS)
+            iguest = Image.open(self.plugin.icon)
+            # ic2.thumbnail(ARTWORK_DATA[type]['size_thumbguest'], Image.ANTIALIAS)
         ihome = ihome.convert("RGBA")
-        iaway = iaway.convert("RGBA")
+        iguest = iguest.convert("RGBA")
         art = ARTWORK_DATA[type]
         ihome = ihome.resize(art.size, Image.ANTIALIAS)
-        iaway = iaway.resize(art.size, Image.ANTIALIAS)
+        iguest = iguest.resize(art.size, Image.ANTIALIAS)
         ifon.paste(ihome, art.pos_home, ihome)
-        ifon.paste(iaway, art.pos_away, iaway)
+        ifon.paste(iguest, art.pos_guest, iguest)
 
     def _create_art(self, type_, background=None):
 
@@ -217,8 +188,8 @@ class ArtWorkFootBall(object):
                 'bandera_pro', art.size_font_command), art.com_home)
             self._draw_text(draw, self.vs, self.font(
                 'ubuntu', art.size_font_weekday), art.vs)
-            self._draw_text(draw, self._data['away'], self.font(
-                'bandera_pro', art.size_font_command), art.com_away)
+            self._draw_text(draw, self._data['guest'], self.font(
+                'bandera_pro', art.size_font_command), art.com_guest)
             self._draw_text(draw, self.weekday, self.font(
                 'ubuntu', art.size_font_weekday), art.weekday)
             self._draw_text(draw, self.month, self.font(
