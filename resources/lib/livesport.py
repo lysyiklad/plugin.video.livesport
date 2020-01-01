@@ -64,6 +64,7 @@ class LiveSport(simpleplugin.Plugin):
         self._date_scan = None  # Время сканирования в utc
         self._listing = OrderedDict()
         self._leagues = OrderedDict()
+        self._leagues_artwork = OrderedDict()
 
         self._language = xbmc.getInfoLabel('System.Language')  # Russian English
 
@@ -103,6 +104,13 @@ class LiveSport(simpleplugin.Plugin):
         path = "plugin://program.plexus/?mode=2&url=" + url.geturl() + "&name=Sopcast"
         return path
 
+    @staticmethod
+    def format_str_column_width(txt, column_width):
+        txt = txt.strip()
+        result = u'{1:<{0:}}'.format(
+            column_width, txt[:column_width] if len(txt) > column_width else txt)
+        return result
+
     @property
     def date_scan(self):
         return self._date_scan
@@ -123,6 +131,7 @@ class LiveSport(simpleplugin.Plugin):
                 self._listing = storage['listing']
                 self._date_scan = storage['date_scan']
                 self._leagues = storage['leagues']
+                self._leagues_artwork = storage['leagues_artwork']
         except Exception as e:
             self.logd('ERROR load data', e)
 
@@ -132,40 +141,47 @@ class LiveSport(simpleplugin.Plugin):
                 storage['listing'] = self._listing
                 storage['date_scan'] = self._date_scan
                 storage['leagues'] = self._leagues
+                storage['leagues_artwork'] = self._leagues_artwork
         except Exception as e:
             self.logd('ERROR dump data', e)
 
-    def _selected_leagues(self):
+    def _selected_leagues(self, leagues, title):
 
-        selected_old = self._get_selected_leagues()
+        selected_old = self._get_selected_leagues(leagues)
 
-        selected = xbmcgui.Dialog().multiselect(_('Choosing a Sports Tournament'), self._leagues.keys(),
-                                                preselect=selected_old)
+        selected = xbmcgui.Dialog().multiselect(title, leagues.keys(), preselect=selected_old)
 
         if selected is not None and selected != selected_old:
-            self._set_selected_leagues(selected)
-            self.logd('_selected_leagues', selected)
-           # self.dump()
-            with self.get_storage() as storage:
-                storage['leagues'] = self._leagues
+            self._set_selected_leagues(selected, leagues)
+            self.logd('selected_leagues', selected)
+            self.dump()
+            #  with self.get_storage() as storage:
+            #      storage['leagues'] = self._leagues
 
             self.on_settings_changed()
 
-    def _get_selected_leagues(self):
-        return [index for index, item in enumerate(self._leagues.items()) if item[1]]
+    def _get_selected_leagues(self, leagues):
+        return [index for index, item in enumerate(leagues.items()) if item[1]]
 
-    def _add_leagues(self, league):
+    def _set_selected_leagues(self, selected, leagues):
+        for index, item in enumerate(leagues.items()):
+            leagues[item[0]] = False
+            if index in selected:
+                leagues[item[0]] = True
+
+    def _add_league(self, league):
         if self._leagues.get(league, None) is None:
             self._leagues[league] = True
-           # self.dump()
-            with self.get_storage() as storage:
-                storage['leagues'] = self._leagues
+            self._leagues_artwork[league] = True
+            self.dump()
+        #  with self.get_storage() as storage:
+        #      storage['leagues'] = self._leagues
 
-    def _set_selected_leagues(self, selected):
-        for index, item in enumerate(self._leagues.items()):
-            self._leagues[item[0]] = False
-            if index in selected:
-                self._leagues[item[0]] = True
+    def selected_leagues(self):
+        self._selected_leagues(self._leagues, _('Choosing a Sports Tournament'))
+
+    def selected_leagues_artwork(self):
+        self._selected_leagues(self._leagues_artwork, _('Select leagues to create ArtWork...'))
 
     def get_http(self, url):
         try:
@@ -255,7 +271,12 @@ class LiveSport(simpleplugin.Plugin):
         :return:
         """
 
-        self.logd('plugin.update - self.settings_changed',  self.settings_changed)
+        self.load()
+
+        self.logd('plugin.update - self.settings_changed', self.settings_changed)
+
+        for it in self._leagues.items():
+            self.log('update self._leagues - {}: {}'.format(it[0], it[1]))
 
         if not self.is_update():
             return
@@ -517,6 +538,14 @@ class LiveSport(simpleplugin.Plugin):
             return None
         return int((self.get(id, 'date') - self.date_scan).total_seconds() / 60)
 
+    def _format_timedelta(self, dt, pref):
+        if self._language == 'Russian':
+            h = int(dt.seconds / 3600)
+            return '{} {} {} {:02} мин.'.format(pref, '%s дн.' % dt.days if dt.days else '',
+                                                '%s ч.' % h if h else u'', int(dt.seconds % 3600 / 60))
+        else:
+            return '{} {}'.format(pref, str(dt).split('.')[0])
+
     def remove_thumb(self, thumb):
         """
         Удаляет рисунок и кеш
@@ -553,6 +582,7 @@ class LiveSport(simpleplugin.Plugin):
         self._date_scan = None
         self._listing.clear()
         self._leagues.clear()
+        self._leagues_artwork.clear()
         self.dump()
 
     def get_path_acestream(self, href):
@@ -608,8 +638,6 @@ class LiveSport(simpleplugin.Plugin):
         return path
 
     def on_settings_changed(self):
-        with self.get_storage() as storage:
-            self._leagues = storage['leagues']
         self.settings_changed = True
         xbmcgui.Dialog().notification(self.name, _('Changing settings ...'), self.icon, 1000)
         self.update()
@@ -655,8 +683,11 @@ class LiveSport(simpleplugin.Plugin):
     def create_listing_extra(self):
         listing = [
             {'label': '[UPPERCASE][B]{}[/B][/UPPERCASE]'.format(_('Leagues Choice...')),
-             'icon': os.path.join(self.dir('media'), 'selectlegue.png'), 'fanart': self.fanart,
+             'icon': os.path.join(self.dir('media'), 'select.png'), 'fanart': self.fanart,
              'url': self.get_url(action='select_leagues')},
+            {'label': '[UPPERCASE][B]{}[/B][/UPPERCASE]'.format(_('Select leagues to create ArtWork...')),
+             'icon': os.path.join(self.dir('media'), 'selectart.png'), 'fanart': self.fanart,
+             'url': self.get_url(action='select_leagues_artwork')},
             {'label': '[UPPERCASE][B]{}[/B][/UPPERCASE]'.format(_('Plugin data reset...')),
              'icon': os.path.join(self.dir('media'), 'reset.png'),
              'fanart': self.fanart, 'url': self.get_url(action='reset')}
@@ -717,6 +748,14 @@ class LiveSport(simpleplugin.Plugin):
         #                     #        xbmcplugin.SORT_METHOD_DATEADDED, xbmcplugin.SORT_METHOD_VIDEO_RATING),
         #                     cache_to_disk=False)
 
+    def _is_league(self, league, leagues):
+        if leagues.get(league, None) is not None:
+            if not leagues[league]:
+                return False
+        else:
+            self._add_league(league)
+        return True
+
     def _parse_listing(self, html, progress=None):
         """
         Парсим страницу для основного списка
@@ -766,14 +805,16 @@ class LiveSport(simpleplugin.Plugin):
 
             league = tag_a.find('span', {'class': 'competition'}).text
 
+            if not self._is_league(league, self._leagues):
+                still = still - 1
+                continue
 
-            if self._leagues.get(league, None) is not None:
-                if not self._leagues[league]:
-                    still = still - 1
-                    continue
-            else:
-                self._add_leagues(league)
-
+            # if self._leagues.get(league, None) is not None:
+            #     if not self._leagues[league]:
+            #         still = still - 1
+            #         continue
+            # else:
+            #     self._add_league(league)
 
             sport = os.path.basename(urlparse(icon_sport).path).split('.')[0]
 
@@ -815,7 +856,7 @@ class LiveSport(simpleplugin.Plugin):
             thumb = ''
             fanart = os.path.join(self.dir('media'), 'fanart_{}.jpg'.format(sport))
 
-            if self.is_create_artwork():
+            if self.is_create_artwork() and self._is_league(league, self._leagues_artwork):
                 art = makeart.ArtWorkFootBall(self,
                                               id=id_,
                                               date=self.time_to_local(date_utc),
@@ -893,13 +934,6 @@ class LiveSport(simpleplugin.Plugin):
                 progress.update(fill, message=game)
 
         return listing
-
-    @staticmethod
-    def format_str_column_width(txt, column_width):
-        txt = txt.strip()
-        result = u'{1:<{0:}}'.format(
-            column_width, txt[:column_width] if len(txt) > column_width else txt)
-        return result
 
     def _resolve_flash_href(self, href):
         # html = self.http_get(href)
@@ -1212,14 +1246,6 @@ class LiveSport(simpleplugin.Plugin):
                                    content='movies',
                                    cache_to_disk=False)
 
-    def format_timedelta(self, dt, pref):
-        if self._language == 'Russian':
-            h = int(dt.seconds / 3600)
-            return '{} {} {} {:02} мин.'.format(pref, '%s дн.' % dt.days if dt.days else '',
-                                                '%s ч.' % h if h else u'', int(dt.seconds % 3600 / 60))
-        else:
-            return '{} {}'.format(pref, str(dt).split('.')[0])
-
     def _get_listing(self, params=None):
         """
         Возвращаем список для корневой виртуальной папки
@@ -1271,13 +1297,13 @@ class LiveSport(simpleplugin.Plugin):
                 date_ = item['date']
                 if info_match['status'] == 'OFFLINE':
                     dt = now_utc - date_
-                    plot = self.format_timedelta(dt, _('Offline'))
+                    plot = self._format_timedelta(dt, _('Offline'))
                 elif info_match['status'] == 'LIVE':
                     dt = now_utc - date_
                     plot = u'%s %s мин.' % (_('Live'), int(dt.total_seconds() / 60))
                 else:
                     dt = date_ - now_utc
-                    plot = self.format_timedelta(dt, _('After'))
+                    plot = self._format_timedelta(dt, _('After'))
 
                 title = u'[COLOR %s]%s[/COLOR]\n[B]%s[/B]\n[UPPERCASE]%s[/UPPERCASE]' % (
                     status, self.time_to_local(date_).strftime('%d.%m %H:%M'), item['label'], item['league'])
@@ -1294,7 +1320,7 @@ class LiveSport(simpleplugin.Plugin):
                         '%d.%m %H:%M' if self.get_setting('is_date_item') else '%H:%M')
 
                 label = '[COLOR %s]%s[/COLOR] - [B]%s[/B]    %s' % (
-                status, lab, item['label'], item['league'] if self.get_setting('is_league_item') else '')
+                    status, lab, item['label'], item['league'] if self.get_setting('is_league_item') else '')
 
                 plot = title + '\n' + plot + '\n\n' + self._site
 

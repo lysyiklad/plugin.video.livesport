@@ -8,7 +8,10 @@ from resources.lib.livesport import plugin
 
 @plugin.action()
 def root(params):
+    # if True:
+    #     return plugin.create_listing_filter(params={'sort': 'football'})
     return plugin.create_listing_categories()
+
 
 @plugin.action()
 def extra(params):
@@ -39,10 +42,13 @@ def reset():
 
 @plugin.action()
 def select_leagues():
-    plugin._selected_leagues()
+    plugin.selected_leagues()
+
+
+@plugin.action()
+def select_leagues_artwork():
+    plugin.selected_leagues_artwork()
 
 
 if __name__ == '__main__':
     plugin.run()
-
-

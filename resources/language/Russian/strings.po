@@ -259,3 +259,7 @@ msgstr "Показывать турнир в элементе списка"
 msgctxt "#30040"
 msgid "Extra"
 msgstr "Дополнительно"
+
+msgctxt "#30041"
+msgid "Select leagues to create ArtWork..."
+msgstr "Выбор турниров для создания ArtWork..."

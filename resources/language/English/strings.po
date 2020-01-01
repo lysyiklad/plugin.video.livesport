@@ -259,3 +259,7 @@ msgstr ""
 msgctxt "#30040"
 msgid "Extra"
 msgstr ""
+
+msgctxt "#30041"
+msgid "Select leagues to create ArtWork..."
+msgstr ""
