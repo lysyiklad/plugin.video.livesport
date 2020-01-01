@@ -8,8 +8,6 @@ from resources.lib.livesport import plugin
 
 @plugin.action()
 def root(params):
-    # if True:
-    #     return plugin.create_listing_filter(params={'sort': 'football'})
     return plugin.create_listing_categories()
 
 
@@ -51,4 +49,8 @@ def select_leagues_artwork():
 
 
 if __name__ == '__main__':
+
+    # import web_pdb
+    # web_pdb.set_trace()
+
     plugin.run()

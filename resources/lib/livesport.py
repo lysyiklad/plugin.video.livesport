@@ -202,8 +202,8 @@ class LiveSport(simpleplugin.Plugin):
             err += 'Response is: {content}'.format(content=err.response.content)
 
         self.log(err)
-        xbmcgui.Dialog().notification(self.name, err, self.icon, 2000)
-        return ''
+        raise Exception(err)
+ #       return ''
 
     def get_listing(self):
         """
@@ -251,11 +251,15 @@ class LiveSport(simpleplugin.Plugin):
         if not links or not self.date_scan or tsn > self.get_setting('delta_scan') or tsn > dt:  # and tnd < dt):
             self.logd('links - id - %s : time now date - %s time scan now - %s' %
                       (id, tnd, tsn), links)
-            # html = self.http_get(self.get(id, 'url_links'))
-            html = self.get_http(self.get(id, 'url_links')).content
-            if not html:
-                self.logd('links', 'not html')
-                return links
+            try:
+                html = self.get_http(self.get(id, 'url_links')).content
+            except Exception as e:
+                xbmcgui.Dialog().notification(self.name, str(e), self.icon, 2000)
+                self.logd('ERROR LINKS', str(e))
+            finally:
+                if not html:
+                    self.logd('links', 'not html')
+                    return links
             del links[:]
             links.extend(self._parse_links(id, html))
             #    if links and status == 'OFFLINE':
@@ -285,77 +289,85 @@ class LiveSport(simpleplugin.Plugin):
 
         progress.create(self.name, _('UPDATE DATA ...'))
 
-        self.log('START UPDATE')
+        try:
 
-        progress.update(1, message=_('Loading site data ...'))
+            self.log('START UPDATE')
 
-        # file_html = os.path.join(self.path, 'livesport.html')
+            progress.update(1, message=_('Loading site data ...'))
 
-        # import web_pdb
-        # web_pdb.set_trace()
+            # file_html = os.path.join(self.path, 'livesport.html')
 
-        html = self.get_http(self._site).content
+            # import web_pdb
+            # web_pdb.set_trace()
 
-        # self.log(html)
+            html = self.get_http(self._site).content
 
-        # with open(file_html, 'wb') as f:
-        #     f.write(html)
+            # self.log(html)
 
-        # html = file_read(file_html)
+            # with open(file_html, 'wb') as f:
+            #     f.write(html)
 
-        self.log('***** 1')
-        self._listing = self._parse_listing(html, progress=progress)
-        self.log('***** 2')
+            # html = file_read(file_html)
 
-        if not self._listing:
-            self.logd('update', 'self._listing None')
-            return
+            self.log('***** 1')
+            self._listing = self._parse_listing(html, progress=progress)
+            self.log('***** 2')
 
-        for item in list(self._listing.values()):
-            if 'thumb' not in item:
-                item['thumb'] = ''
-            if 'icon' not in item:
-                item['icon'] = ''
-            if 'poster' not in item:
-                item['poster'] = ''
-            if 'fanart' not in item:
-                item['fanart'] = ''
-            if 'url_links' not in item:
-                item['url_links'] = ''
-            if 'href' not in item:
-                item['href'] = []
+            if not self._listing:
+                self.logd('update', 'self._listing None')
+                return
 
-        self.log('***** 3')
+            for item in list(self._listing.values()):
+                if 'thumb' not in item:
+                    item['thumb'] = ''
+                if 'icon' not in item:
+                    item['icon'] = ''
+                if 'poster' not in item:
+                    item['poster'] = ''
+                if 'fanart' not in item:
+                    item['fanart'] = ''
+                if 'url_links' not in item:
+                    item['url_links'] = ''
+                if 'href' not in item:
+                    item['href'] = []
 
-        artwork = []
-        for item in list(self._listing.values()):
-            if item['thumb']:
-                artwork.append(item['thumb'])
-            if item['icon']:
-                artwork.append(item['icon'])
-            if item['poster']:
-                artwork.append(item['poster'])
-            if item['fanart']:
-                artwork.append(item['fanart'])
+            self.log('***** 3')
 
-        for file in os.listdir(self.dir('thumb')):
-            f = os.path.join(self.dir('thumb'), file)
-            if f not in artwork:
-                self.remove_thumb(f)
+            artwork = []
+            for item in list(self._listing.values()):
+                if item['thumb']:
+                    artwork.append(item['thumb'])
+                if item['icon']:
+                    artwork.append(item['icon'])
+                if item['poster']:
+                    artwork.append(item['poster'])
+                if item['fanart']:
+                    artwork.append(item['fanart'])
 
-        self.log('***** 4')
+            for file in os.listdir(self.dir('thumb')):
+                f = os.path.join(self.dir('thumb'), file)
+                if f not in artwork:
+                    self.remove_thumb(f)
 
-        self._listing = OrderedDict(sorted(list(self._listing.items()), key=lambda t: t[1]['date']))
+            self.log('***** 4')
 
-        self._date_scan = self.time_now_utc()
-        self.dump()
-        self.log('STOP UPDATE')
-        progress.update(100, self.name, _('End update...'))
-        xbmc.sleep(500)
+            self._listing = OrderedDict(sorted(list(self._listing.items()), key=lambda t: t[1]['date']))
 
-        self.log('***** 5')
+            self._date_scan = self.time_now_utc()
+            self.dump()
+            self.log('STOP UPDATE')
+            progress.update(100, self.name, _('End update...'))
 
-        progress.close()
+
+        except Exception as e:
+            xbmcgui.Dialog().notification(self.name, str(e), self.icon, 2000)
+            self.logd('ERROR UPDATE', str(e))
+        finally:
+            xbmc.sleep(500)
+            self.log('***** 5')
+            progress.close()
+
+
 
     def is_update(self):
         """
@@ -447,7 +459,7 @@ class LiveSport(simpleplugin.Plugin):
                     if i == 29:
                         xbmcgui.Dialog().notification(
                             self.name, _('Torrent not available or invalid!'), self.icon, 500)
-                        self.get_http(stop_url)
+                        requests.get(stop_url)
 
                     progress.close()
                     xbmc.sleep(1000)
@@ -937,11 +949,17 @@ class LiveSport(simpleplugin.Plugin):
 
     def _resolve_flash_href(self, href):
         # html = self.http_get(href)
-        html = self.get_http(href).content
-        soup = bs4.BeautifulSoup(html, 'html.parser')
-        tag_iframe = soup.find('iframe')
-        # src_html = self.http_get(tag_iframe['src'])
-        src_html = self.get_http(tag_iframe['src']).content
+        try:
+            html = self.get_http(href).content
+
+            soup = bs4.BeautifulSoup(html, 'html.parser')
+            tag_iframe = soup.find('iframe')
+            # src_html = self.http_get(tag_iframe['src'])
+            src_html = self.get_http(tag_iframe['src']).content
+        except Exception as e:
+            #xbmcgui.Dialog().notification(self.name, str(e), self.icon, 2000)
+            self.logd('ERROR RESOLVE HREF ({})'.format(href), str(e))
+            return ''
         if src_html is None:
             return ''
         ilink = src_html.find(b'var videoLink')
@@ -1116,10 +1134,8 @@ class LiveSport(simpleplugin.Plugin):
         info_mini = self._get_mini_info_math(self.get(id_, 'id_event'))
         plot = u'%s\n%s\n%s\n\n[B]                  %s  :  %s[/B]' % (
             self.time_to_local(self.get(id_, 'date')).strftime('%d.%m %H:%M'),
-            self.get(
-                id_, 'league'),
-            self.get(
-                id_, 'label'),
+            self.get(id_, 'league'),
+            self.get(id_, 'label'),
             info_mini['scorel'],
             info_mini['scorer']
         )
@@ -1186,7 +1202,7 @@ class LiveSport(simpleplugin.Plugin):
                           'is_playable': False,
                           'is_folder': False})
 
-        if len(l) == 3:
+        if len(l) < 4:
             l.append({'label': _('Stream information will be available 30 minutes prior to the begining of an event.'),
                       'info': {'video': {'title': self._site, 'plot': self._site}},
                       'art': art,
@@ -1199,10 +1215,14 @@ class LiveSport(simpleplugin.Plugin):
         # center = self.http_get(
         #     'https://moon.livesport.ws/engine/modules/sports/sport_template_loader.php?'
         #     'from=showfull&template=match/main_match_center_mini_refresher')
-
-        center = self.get_http(
-            'https://moon.livesport.ws/engine/modules/sports/sport_template_loader.php?'
-            'from=showfull&template=match/main_match_center_mini_refresher').content
+        try:
+            center = self.get_http(
+                'https://moon.livesport.ws/engine/modules/sports/sport_template_loader.php?'
+                'from=showfull&template=match/main_match_center_mini_refresher').content
+        except Exception as e:
+            #xbmcgui.Dialog().notification(self.name, str(e), self.icon, 2000)
+            self.logd('ERROR GET MATCH CENTER MINI', str(e))
+            return None
 
         center = center.decode('unicode-escape')
         center = center[center.find('{'):]

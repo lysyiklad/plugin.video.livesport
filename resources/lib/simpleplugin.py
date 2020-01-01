@@ -1116,6 +1116,8 @@ class Plugin(Addon):
 
         :raises SimplePluginError: if unknown action string is provided.
         """
+
+        self.log_debug(sys.argv)
         self._handle = int(sys.argv[1])
         self._params = self.get_params(sys.argv[2][1:])
         self.log_debug(str(self))
