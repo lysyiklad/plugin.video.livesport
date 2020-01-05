@@ -98,6 +98,12 @@ msgctxt "#10021"
 msgid "Add-on settings..."
 msgstr ""
 
+msgctxt "#10022"
+msgid "Information in the window full screen video"
+msgstr ""
+
+
+
 
 
 msgctxt "#30000"

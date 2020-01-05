@@ -362,10 +362,10 @@ class LiveSport(simpleplugin.Plugin):
             self.log('***** 4')
 
             self._listing = OrderedDict(sorted(list(self._listing.items()), key=lambda t: t[1]['date']))
-
+            self.log('***** 5')
             self._date_scan = self.time_now_utc()
             self.dump()
-            self.log('STOP UPDATE')
+            self.log('STOP UPDATE [date scan {}]'.format(self.date_scan))
             self._progress.update(100, self.name, _('End update...'))
 
 
@@ -374,7 +374,7 @@ class LiveSport(simpleplugin.Plugin):
             self.logd('ERROR UPDATE', str(e))
         finally:
             xbmc.sleep(500)
-            self.log('***** 5')
+            self.log('***** 6')
             if self._progress:
                 self._progress.close()
 
@@ -398,7 +398,7 @@ class LiveSport(simpleplugin.Plugin):
                 return True
             if self._time_scan_now() > self.get_setting('delta_scan'):
                 self.logd(
-                    'is_update', 'True - self._time_scan_now() > self.get_setting(delta_scan)')
+                    'is_update', 'True - self._time_scan_now() {} > self.get_setting(delta_scan) {}'.format(self._time_scan_now(), self.get_setting('delta_scan')))
                 return True  #
         except Exception as e:
             self.logd('ERROR -> is_update', e)
@@ -453,8 +453,7 @@ class LiveSport(simpleplugin.Plugin):
 
                             status = j['status']
                             if status == 'dl':
-                                progress.update(
-                                    i * 3, message=_('playback...'))
+                                progress.update(i * 3, message=_('playback...'))
                                 xbmc.sleep(1000)
                                 break
                             progress.update(i * 3, message=_('prebuffering...'))
@@ -483,7 +482,7 @@ class LiveSport(simpleplugin.Plugin):
         elif url.scheme == 'sop':
             path = self.get_path_sopcast(href)
         elif url.netloc == 'stream.livesport.ws':
-            path = self._resolve_flash_href(url.geturl())
+            path = self._resolve_direct_link(url.geturl())
         else:
             path = url.geturl()
 
@@ -977,7 +976,7 @@ class LiveSport(simpleplugin.Plugin):
 
         return listing
 
-    def _resolve_flash_href(self, href):
+    def _resolve_direct_link(self, href):
         try:
             html = self.get_http(href).content
 
@@ -1034,7 +1033,7 @@ class LiveSport(simpleplugin.Plugin):
 
                     tag_img = tr.find('img')
                     if i == 0 and self.get_setting('is_http_link'):
-                        # href = self._resolve_flash_href(tr.find('a')['href'])
+                        #href = self._resolve_direct_link(tr.find('a')['href'])
                         href = tr.find('a')['href']
                         if href:
                             links.append(

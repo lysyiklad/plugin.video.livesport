@@ -36,6 +36,7 @@
 	<category label="10004">
 		<setting id="is_update_service" type="bool" label="10006" default="false" visible="true"/>
 		<setting id="scan_service" type="number" label="10007" default="180" visible="eq(-1,true)"/>
+		<setting id="is_info_fullscreenvideo" type="bool" label="10022" default="false" visible="true"/>
 		<setting type="lsep" label='10005'/>
 	</category>
 </settings>
