@@ -1351,7 +1351,13 @@ class Plugin(Addon):
             list_item = xbmcgui.ListItem(path=context.path)
         else:
             list_item = self.create_list_item(context.play_item)
+
+        # import web_pdb
+        # web_pdb.set_trace()
+
         xbmcplugin.setResolvedUrl(self._handle, context.succeeded, list_item)
+        #xbmc.Player().play(context.path, list_item)
+
 
 
 class RoutedPlugin(Plugin):

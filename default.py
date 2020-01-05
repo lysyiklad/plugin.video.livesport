@@ -1,7 +1,8 @@
 ﻿# -*- coding: utf-8 -*-
 
-import xbmcgui
-import xbmc
+# import xbmcgui
+# import xbmc
+import xbmcaddon
 
 from resources.lib.livesport import plugin
 
@@ -48,8 +49,12 @@ def select_leagues_artwork():
     plugin.selected_leagues_artwork()
 
 
-if __name__ == '__main__':
+@plugin.action()
+def settings():
+    xbmcaddon.Addon().openSettings()
 
+
+if __name__ == '__main__':
     # import web_pdb
     # web_pdb.set_trace()
 

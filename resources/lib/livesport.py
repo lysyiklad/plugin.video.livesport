@@ -11,9 +11,11 @@ standard_library.install_aliases()
 # import urllib.error
 # import urllib.request
 import requests
+import re
 from . import simpleplugin, makeart
 import xbmcgui
 import xbmc
+import xbmcplugin
 from dateutil.tz import UTC, tzlocal, tzoffset
 from dateutil.parser import *
 import dateutil
@@ -28,6 +30,7 @@ from builtins import range
 from builtins import str
 
 URL_NOT_LINKS = 'https://www.ixbt.com/multimedia/video-methodology/bitrates/avc-1080-25p/1080-25p-10mbps.mp4'
+URL_NOT_LINKS = 'http://tv-na-stene.ru/files/HD%20Red.mkv'
 
 HEADERS_HTTP = {'User-Agent':
                     'Mozilla/4.0 (compatible; MSIE 8.0; Windows NT 5.1; Trident/4.0; Mozilla/4.0'
@@ -73,10 +76,16 @@ class LiveSport(simpleplugin.Plugin):
         else:
             self._site = self.get_setting('url_site')
 
+        self._progress = xbmcgui.DialogProgressBG()
+
         # import web_pdb
         # web_pdb.set_trace()
 
         self.load()
+
+    # def __del__(self):
+    #     if self._progress:
+    #         self._progress.close()
 
     @staticmethod
     def create_id(key):
@@ -203,7 +212,8 @@ class LiveSport(simpleplugin.Plugin):
 
         self.log(err)
         raise Exception(err)
- #       return ''
+
+    #       return ''
 
     def get_listing(self):
         """
@@ -219,40 +229,40 @@ class LiveSport(simpleplugin.Plugin):
         :param params: Передается в self.get_url(action='links', id=item['id'])
         :return:
         """
-        id = int(params['id'])
-        links = self.links(id, isdump=True)
+        id_ = int(params.id)
+        links = self.links(id_, isdump=True)
         self.logd('links', links)
 
-        return self._get_links(id, links)
+        return self._get_links(id_, links)
 
-    def links(self, id, isdump=False):
+    def links(self, id_, isdump=False):
         """
         Возвращает список ссылок кокретного элемента. При необходимости парсит по ссылке в элементе.
-        :param id: id элемента
+        :param id_: id элемента
         :return:
         """
-        links = self.get(id, 'href')
-        tnd = self._time_now_date(id)
+        links = self.get(id_, 'href')
+        tnd = self._time_now_date(id_)
         tsn = self._time_scan_now()
         dt = self.get_setting('delta_links')
 
         self.logd('links links', links)
         self.logd('links self.date_scan', self.date_scan)
 
-        links = self.get(id, 'href')
+        links = self.get(id_, 'href')
 
         self.logd('links links', links)
 
-        status = self.get(id, 'status')
+        status = self.get(id_, 'status')
 
         if links and status == 'OFFLINE':
-            self.logd('links', 'id - %s  status - %s ' % (id, status))
+            self.logd('links', 'id - %s  status - %s ' % (id_, status))
             return links
         if not links or not self.date_scan or tsn > self.get_setting('delta_scan') or tsn > dt:  # and tnd < dt):
             self.logd('links - id - %s : time now date - %s time scan now - %s' %
-                      (id, tnd, tsn), links)
+                      (id_, tnd, tsn), links)
             try:
-                html = self.get_http(self.get(id, 'url_links')).content
+                html = self.get_http(self.get(id_, 'url_links')).content
             except Exception as e:
                 xbmcgui.Dialog().notification(self.name, str(e), self.icon, 2000)
                 self.logd('ERROR LINKS', str(e))
@@ -261,11 +271,11 @@ class LiveSport(simpleplugin.Plugin):
                     self.logd('links', 'not html')
                     return links
             del links[:]
-            links.extend(self._parse_links(id, html))
+            links.extend(self._parse_links(id_, html))
             #    if links and status == 'OFFLINE':
             self.dump()
 
-        self.logd('self.get(%s, href)' % id, self.get(id, 'href'))
+        self.logd('self.get(%s, href)' % id_, self.get(id_, 'href'))
 
         return links
 
@@ -285,15 +295,15 @@ class LiveSport(simpleplugin.Plugin):
         if not self.is_update():
             return
 
-        progress = xbmcgui.DialogProgressBG()
+        # progress = xbmcgui.DialogProgressBG()
 
-        progress.create(self.name, _('UPDATE DATA ...'))
+        self._progress.create(self.name, _('UPDATE DATA ...'))
 
         try:
 
             self.log('START UPDATE')
 
-            progress.update(1, message=_('Loading site data ...'))
+            self._progress.update(1, message=_('Loading site data ...'))
 
             # file_html = os.path.join(self.path, 'livesport.html')
 
@@ -310,7 +320,7 @@ class LiveSport(simpleplugin.Plugin):
             # html = file_read(file_html)
 
             self.log('***** 1')
-            self._listing = self._parse_listing(html, progress=progress)
+            self._listing = self._parse_listing(html, progress=self._progress)
             self.log('***** 2')
 
             if not self._listing:
@@ -356,18 +366,17 @@ class LiveSport(simpleplugin.Plugin):
             self._date_scan = self.time_now_utc()
             self.dump()
             self.log('STOP UPDATE')
-            progress.update(100, self.name, _('End update...'))
+            self._progress.update(100, self.name, _('End update...'))
 
 
         except Exception as e:
-            xbmcgui.Dialog().notification(self.name, str(e), self.icon, 2000)
+            xbmcgui.Dialog().notification(self.name, str(e), xbmcgui.NOTIFICATION_ERROR, 10000)
             self.logd('ERROR UPDATE', str(e))
         finally:
             xbmc.sleep(500)
             self.log('***** 5')
-            progress.close()
-
-
+            if self._progress:
+                self._progress.close()
 
     def is_update(self):
         """
@@ -407,7 +416,7 @@ class LiveSport(simpleplugin.Plugin):
         path = ''
         msg = ''
 
-        href = params['href']
+        href = params.href
         url = urlparse(href)
         if url.scheme == 'acestream':
             progress = xbmcgui.DialogProgressBG()
@@ -426,19 +435,17 @@ class LiveSport(simpleplugin.Plugin):
                     as_url = 'http://' + urlparse(path).hostname + ':' + '6878' + '/ace/getstream?id=' + \
                              urlparse(href).netloc + '&format=json'  # &_idx=" + str(ep)
 
-                    # json = eval(self.http_get(as_url).replace(b'null', b'"null"'))["response"]
-                    json = requests.get(as_url).json()["response"]
-                    self.log(json)
-                    stat_url = json["stat_url"]
+                    json_response = requests.get(as_url).json()["response"]
+                    self.log(json_response)
+                    stat_url = json_response["stat_url"]
                     self.logd('stat_url', stat_url)
-                    stop_url = json["command_url"] + '?method=stop'
+                    stop_url = json_response["command_url"] + '?method=stop'
                     self.logd('stop_url', stop_url)
-                    purl = json["playback_url"]
+                    purl = json_response["playback_url"]
                     self.logd('purl', purl)
 
                     for i in range(30):
                         xbmc.sleep(1000)
-                        # j = eval(self.http_get(stat_url).replace(b'null', b'"null"'))["response"]
                         j = requests.get(stat_url).json()["response"]
                         if j == {}:
                             progress.update(i * 3, message=_('wait...'))
@@ -475,6 +482,8 @@ class LiveSport(simpleplugin.Plugin):
 
         elif url.scheme == 'sop':
             path = self.get_path_sopcast(href)
+        elif url.netloc == 'stream.livesport.ws':
+            path = self._resolve_flash_href(url.geturl())
         else:
             path = url.geturl()
 
@@ -486,7 +495,25 @@ class LiveSport(simpleplugin.Plugin):
 
         self.logd('play', 'PATH PLAY: %s' % path)
 
-        return self.resolve_url(path, succeeded=True)
+        params = {'sender': self.id,
+                  'message': 'resolve_url',
+                  'data': {'command': 'Play.Live',
+                           'id': params.id,
+                           },
+                  }
+
+        command = json.dumps({'jsonrpc': '2.0',
+                              'method': 'JSONRPC.NotifyAll',
+                              'params': params,
+                              'id': 1,
+                              })
+
+        result = xbmc.executeJSONRPC(command)
+
+        self.logd('play', 'result xbmc.executeJSONRPC {}'.format(result))
+
+        # return self.resolve_url(path, succeeded=True)
+        return path
 
     @staticmethod
     def time_now_utc():
@@ -700,6 +727,9 @@ class LiveSport(simpleplugin.Plugin):
             {'label': '[UPPERCASE][B]{}[/B][/UPPERCASE]'.format(_('Select leagues to create ArtWork...')),
              'icon': os.path.join(self.dir('media'), 'selectart.png'), 'fanart': self.fanart,
              'url': self.get_url(action='select_leagues_artwork')},
+            {'label': '[UPPERCASE][B]{}[/B][/UPPERCASE]'.format(_('Add-on settings...')),
+             'icon': os.path.join(self.dir('media'), 'extra.png'),
+             'fanart': self.fanart, 'url': self.get_url(action='settings')},
             {'label': '[UPPERCASE][B]{}[/B][/UPPERCASE]'.format(_('Plugin data reset...')),
              'icon': os.path.join(self.dir('media'), 'reset.png'),
              'fanart': self.fanart, 'url': self.get_url(action='reset')}
@@ -844,12 +874,12 @@ class LiveSport(simpleplugin.Plugin):
                             'from=event&event_id={}&tab_id=undefined&post_id={}'.format(
                     self._site, id_event, str(id_))
 
-            # self.logd('url_links', url_links)
-
             date_naive = tag_i['data-datetime']
+            # self.logd('date_naive', date_naive)
             try:
-                dt = dateutil.parser.parse(date_naive)
+                dt = dateutil.parser.parse(date_naive, dayfirst=True)
             except ValueError as e:
+                self.logd('_parse_listing ERROR DATEUTIL PARSE', str(e))
                 if e.message == 'hour must be in 0..23':
                     dt = dateutil.parser.parse(date_naive.split()[0])
 
@@ -948,16 +978,14 @@ class LiveSport(simpleplugin.Plugin):
         return listing
 
     def _resolve_flash_href(self, href):
-        # html = self.http_get(href)
         try:
             html = self.get_http(href).content
 
             soup = bs4.BeautifulSoup(html, 'html.parser')
             tag_iframe = soup.find('iframe')
-            # src_html = self.http_get(tag_iframe['src'])
             src_html = self.get_http(tag_iframe['src']).content
         except Exception as e:
-            #xbmcgui.Dialog().notification(self.name, str(e), self.icon, 2000)
+            # xbmcgui.Dialog().notification(self.name, str(e), self.icon, 2000)
             self.logd('ERROR RESOLVE HREF ({})'.format(href), str(e))
             return ''
         if src_html is None:
@@ -1006,7 +1034,8 @@ class LiveSport(simpleplugin.Plugin):
 
                     tag_img = tr.find('img')
                     if i == 0 and self.get_setting('is_http_link'):
-                        href = self._resolve_flash_href(tr.find('a')['href'])
+                        # href = self._resolve_flash_href(tr.find('a')['href'])
+                        href = tr.find('a')['href']
                         if href:
                             links.append(
                                 {
@@ -1206,7 +1235,7 @@ class LiveSport(simpleplugin.Plugin):
             l.append({'label': _('Stream information will be available 30 minutes prior to the begining of an event.'),
                       'info': {'video': {'title': self._site, 'plot': self._site}},
                       'art': art,
-                      'url': self.get_url(action='play', href=URL_NOT_LINKS),
+                      'url': self.get_url(action='play', href=URL_NOT_LINKS, id=id_),
                       'is_playable': True})
 
         return l
@@ -1220,7 +1249,7 @@ class LiveSport(simpleplugin.Plugin):
                 'https://moon.livesport.ws/engine/modules/sports/sport_template_loader.php?'
                 'from=showfull&template=match/main_match_center_mini_refresher').content
         except Exception as e:
-            #xbmcgui.Dialog().notification(self.name, str(e), self.icon, 2000)
+            # xbmcgui.Dialog().notification(self.name, str(e), self.icon, 2000)
             self.logd('ERROR GET MATCH CENTER MINI', str(e))
             return None
 
@@ -1266,6 +1295,101 @@ class LiveSport(simpleplugin.Plugin):
                                    content='movies',
                                    cache_to_disk=False)
 
+    def get_labels_live(self):
+
+        labels = [u'[UPPERCASE][COLOR FF0084FF][B]{}:[/B][/COLOR][/UPPERCASE]'.format(_('Live'))]
+
+        center = self._get_match_center_mini()
+
+        try:
+            for item in list(self._listing.values()):
+
+                info_match = self._get_mini_info_math(item['id_event'], center)
+
+                if not info_match:
+                    self.logd('_get_listing() if not info_match', item['label'])
+                    continue
+
+                if info_match['status'] != u'LIVE':
+                    continue
+
+                labels.append(
+                    u'[B]{} - {}[/B]  {}'.format(info_match['scorel'], info_match['scorer'], item['label'])
+                )
+
+        except Exception as e:
+            self.logd('._get_labels_live() ERROR', str(e))
+
+        return labels
+
+    def get_labels_status_match(self, id_):
+
+        labels = []
+
+        links = self.links(id_)
+
+        info_mini = self._get_mini_info_math(self.get(id_, 'id_event'))
+
+        labels.append(u'{}       {}'.format(self.time_to_local(self.get(id_, 'date')).strftime('%d.%m %H:%M'),
+                                            self.get(id_, 'league')))
+
+        labels.append(u'[B]{}    {} : {}    {} [/B]'.format(self.get(id_, 'home'), info_mini['scorel'],
+                                                            info_mini['scorer'], self.get(id_, 'guest')))
+
+        for link in links:
+            if link.get('status', '') != 'broadcast':
+                if link['label'] != '[COLOR FF0084FF][B]{}[/B][/COLOR]'.format(_('BROADCASTS:')):
+                    labels.append(link['label'])
+
+        return labels
+
+    @staticmethod
+    def remove_square_brackets(txt):
+        return re.sub('[\[].*?[\]]', '', txt)
+
+    # @staticmethod
+    # def format_str_column_width_new(label, column_width):
+    #     #txt = txt.strip()
+    #     #print('txt - {}'.format(str(txt)))
+    #     len_label = len(label)
+    #     label_real = LiveSport.remove_square_brackets(label)
+    #     len_label_real = len(label_real)
+    #
+    #     label_utf8 = label.encode('utf-8')
+    #     len_label_utf8 = len(label_utf8)
+    #     label_real_utf8 = label_real.encode('utf-8')
+    #     len_label_real_utf8 = len(label_real_utf8)
+    #
+    #     #print('len_service - {}'.format(len_service))
+    #
+    #     # print('real txt - {}'.format(LiveSport.remove_square_brackets(txt)))
+    #     # print('len_real - {}'.format(len(LiveSport.remove_square_brackets(txt))))
+    #     # print('column_width - {}'.format(column_width))
+    #     # print('len_service - len_real - {}'.format(len_service - len_real))
+    #     # print('column_width - (len_service - len_real) - {}'.format(column_width - (len_service - len_real)))
+    #     #result = '{1:{0:}s}  |'.format(column_width + (len_service - len_real), txt)
+    #     result = '{}{}|'.format(label, ' '.join('*' for a in range(column_width - (len_label - len_real))))
+    #     return result
+    #
+    # def create_labels(self, id_):
+    #     row = 20
+    #     live = self.get_labels_live()
+    #     status = self.get_labels_status_match(id_)
+    #     # probel = ['', '', '', '']
+    #     # status = status + probel
+    #     sl = status + live
+    #     labels = []
+    #     if len(sl) > row:
+    #         for i, v in enumerate(sl):
+    #             if i == row:
+    #                 break
+    #             if (i + row) < len(sl):
+    #                 labels.append('{}{}'.format(self.format_str_column_width_new(sl[i], 60),  sl[i + row]))
+    #             else:
+    #                 labels.append('{}'.format(self.format_str_column_width_new(sl[i], 60)))
+    #         return labels
+    #     return sl
+
     def _get_listing(self, params=None):
         """
         Возвращаем список для корневой виртуальной папки
@@ -1280,7 +1404,7 @@ class LiveSport(simpleplugin.Plugin):
 
         now_utc = self.time_now_utc()
 
-        self.logd('_get_listing()', '%s' % self.time_to_local(now_utc))
+        self.logd('_get_listing() time_to_local(now_utc)', '%s' % self.time_to_local(now_utc))
 
         center = self._get_match_center_mini()
 
@@ -1315,6 +1439,7 @@ class LiveSport(simpleplugin.Plugin):
                 # web_pdb.set_trace()
 
                 date_ = item['date']
+                # self.logd('_get_listing() {}'.format(item['label']), '%s' % item['date'])
                 if info_match['status'] == 'OFFLINE':
                     dt = now_utc - date_
                     plot = self._format_timedelta(dt, _('Offline'))
