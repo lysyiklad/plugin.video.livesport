@@ -42,7 +42,6 @@ class Monitor(xbmc.Monitor):
         self._id = None
 
     def _get_settings(self):
-
         noupdate = {}
         for name_setting in SETTING_UPDATE:
             noupdate[name_setting] = plugin.get_setting(name_setting)
@@ -69,24 +68,21 @@ class Monitor(xbmc.Monitor):
                 self._timeout_update = 0
 
     def onNotification(self, sender, method, data):
-
-        print 'ON NOTIFICATION %s - %s - %s' % (sender, method, data)
+        plugin.log('ON NOTIFICATION %s - %s - %s' % (sender, method, data))
         #        xbmc.sleep(500)
 
         if sender == 'plugin.video.livesport':
             self.is_dlg = True
             command_info = json.loads(data)
             self._id = int(command_info['id'])
-            print 'ON NOTIFICATION SENDER %s' % command_info
-            print 'ON NOTIFICATION SENDER %s' % str(self.is_dlg)
+            plugin.log('ON NOTIFICATION SENDER %s' % command_info)
 
         if sender == 'xbmc':
             if method == 'Player.OnStop':
                 self.is_dlg = False
                 command_info = json.loads(data)
                 self._id = None
-                print 'ON NOTIFICATION SENDER %s' % command_info
-                print 'ON NOTIFICATION SENDER %s' % str(self.is_dlg)
+                plugin.log('ON NOTIFICATION SENDER %s' % command_info)
 
     def _get_skin_resolution(self):
         skin_path = xbmc.translatePath("special://skin/")
@@ -105,7 +101,7 @@ class Monitor(xbmc.Monitor):
                 widht, height = self._get_skin_resolution()
                 row = 20
                 if self.background is None:
-                    print 'SKIN RESOLUTION WIDHT - %s HEIGHT %s' % (widht, height)
+                    plugin.log('SKIN RESOLUTION WIDHT - %s HEIGHT %s' % (widht, height))
                     self.background = xbmcgui.ControlImage(1, 1, 1, 1,
                                                            os.path.join(plugin.dir('media'), "background.png"))
                     self.window.addControl(self.background)

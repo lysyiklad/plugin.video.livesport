@@ -365,7 +365,8 @@ class LiveSport(simpleplugin.Plugin):
             self.log('***** 5')
             self._date_scan = self.time_now_utc()
             self.dump()
-            self.log('STOP UPDATE [date scan {}]'.format(self.date_scan))
+            self.log(
+                'STOP UPDATE [date scan = {} - _time_scan_now() = {}]'.format(self.date_scan, self._time_scan_now()))
             self._progress.update(100, self.name, _('End update...'))
 
 
@@ -398,7 +399,10 @@ class LiveSport(simpleplugin.Plugin):
                 return True
             if self._time_scan_now() > self.get_setting('delta_scan'):
                 self.logd(
-                    'is_update', 'True - self._time_scan_now() {} > self.get_setting(delta_scan) {}'.format(self._time_scan_now(), self.get_setting('delta_scan')))
+                    'is_update',
+                    'True - self._time_scan_now() {} > self.get_setting(delta_scan) {}'.format(self._time_scan_now(),
+                                                                                               self.get_setting(
+                                                                                                   'delta_scan')))
                 return True  #
         except Exception as e:
             self.logd('ERROR -> is_update', e)
@@ -1033,7 +1037,7 @@ class LiveSport(simpleplugin.Plugin):
 
                     tag_img = tr.find('img')
                     if i == 0 and self.get_setting('is_http_link'):
-                        #href = self._resolve_direct_link(tr.find('a')['href'])
+                        # href = self._resolve_direct_link(tr.find('a')['href'])
                         href = tr.find('a')['href']
                         if href:
                             links.append(
