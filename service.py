@@ -109,7 +109,7 @@ class Monitor(xbmc.Monitor):
                     if widht == 1920 and height == 1440:  # WIDHT - 1920 HEIGHT 1440
                         self.background.setPosition(100, 150)
                         self.background.setWidth(widht - 200)
-                        self.background.setHeight(height - 500)
+                        self.background.setHeight(height - 640)
                         row = 26
                     elif widht == 1920 and height == 1080:  # SKIN RESOLUTION WIDHT - 1920 HEIGHT 1080
                         self.background.setPosition(100, 100)
@@ -138,6 +138,7 @@ class Monitor(xbmc.Monitor):
                         status = []
                     else:
                         status = plugin.get_labels_status_match(self._id)
+                    #status = []
 
                     if len(status) < row:
                         self.list_left.addItems(status)

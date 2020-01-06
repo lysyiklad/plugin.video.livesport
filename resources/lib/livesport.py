@@ -272,8 +272,8 @@ class LiveSport(simpleplugin.Plugin):
                     return links
             del links[:]
             links.extend(self._parse_links(id_, html))
-            #    if links and status == 'OFFLINE':
-            self.dump()
+            # if links and status == 'OFFLINE':
+            #     self.dump()
 
         self.logd('self.get(%s, href)' % id_, self.get(id_, 'href'))
 
