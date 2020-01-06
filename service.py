@@ -4,6 +4,7 @@ import os
 import json
 import xbmc
 import xbmcgui
+import datetime
 import xml.etree.ElementTree as ET
 
 from resources.lib.livesport import plugin
@@ -31,7 +32,6 @@ class Monitor(xbmc.Monitor):
     def __init__(self, *args, **kwargs):
         xbmc.Monitor.__init__(self)
         self._settings = self._get_settings()
-        self._timeout_update = 0
 
         self.is_dlg = False
         self.showing = False
@@ -40,6 +40,14 @@ class Monitor(xbmc.Monitor):
         self.list_left = None
         self.list_right = None
         self._id = None
+        self._date_update_service = None
+
+        try:
+            self._date_update_service = datetime.datetime.strptime(plugin.get_setting('date_update_service'),
+                                                                   "%m/%d/%Y %H:%M")
+        except:
+            self._date_update_service = datetime.datetime.utcnow() - datetime.timedelta(
+                minutes=(plugin.get_setting('scan_service') + 5))
 
     def _get_settings(self):
         noupdate = {}
@@ -59,13 +67,14 @@ class Monitor(xbmc.Monitor):
     def update_data_plugin(self):
         if not plugin.get_setting('is_update_service'):
             return
-        self._timeout_update += Monitor.STEP
         if not xbmc.Player().isPlaying():
-            if self._timeout_update > plugin.get_setting('scan_service') * 60:
+            utcnow = datetime.datetime.utcnow()
+            if int((utcnow - self._date_update_service).total_seconds() / 60) > int(plugin.get_setting('scan_service')):
                 plugin.log('START BACKGROUND DATA UPDATE!')
                 plugin.update()
                 plugin.log('STOP BACKGROUND DATA UPDATE!')
-                self._timeout_update = 0
+                self._date_update_service = utcnow
+                plugin.set_setting('date_update_service', utcnow.strftime("%m/%d/%Y %H:%M"))
 
     def onNotification(self, sender, method, data):
         plugin.log('ON NOTIFICATION %s - %s - %s' % (sender, method, data))
@@ -138,7 +147,6 @@ class Monitor(xbmc.Monitor):
                         status = []
                     else:
                         status = plugin.get_labels_status_match(self._id)
-                    #status = []
 
                     if len(status) < row:
                         self.list_left.addItems(status)

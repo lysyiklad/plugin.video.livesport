@@ -7,9 +7,6 @@ from __future__ import division
 from future import standard_library
 
 standard_library.install_aliases()
-# import urllib.parse
-# import urllib.error
-# import urllib.request
 import requests
 import re
 from . import simpleplugin, makeart
@@ -22,14 +19,13 @@ import dateutil
 import bs4
 from urllib.parse import urlparse
 from collections import OrderedDict
-# import pickle
 import os
 import json
 import datetime
 from builtins import range
 from builtins import str
 
-URL_NOT_LINKS = 'https://www.ixbt.com/multimedia/video-methodology/bitrates/avc-1080-25p/1080-25p-10mbps.mp4'
+#URL_NOT_LINKS = 'https://www.ixbt.com/multimedia/video-methodology/bitrates/avc-1080-25p/1080-25p-10mbps.mp4'
 URL_NOT_LINKS = 'http://tv-na-stene.ru/files/HD%20Red.mkv'
 
 HEADERS_HTTP = {'User-Agent':
@@ -83,9 +79,6 @@ class LiveSport(simpleplugin.Plugin):
 
         self.load()
 
-    # def __del__(self):
-    #     if self._progress:
-    #         self._progress.close()
 
     @staticmethod
     def create_id(key):
@@ -132,7 +125,14 @@ class LiveSport(simpleplugin.Plugin):
         return self._dir[dir_]
 
     def get(self, id_, key):
-        return self._listing[id_][key]
+        item = self._listing.get(id_, None)
+        if item is None:
+            self.update()
+            item = self._listing.get(id_, None)
+            if item is None:
+                return None
+
+        return item.get(key, None)
 
     def load(self):
         try:
@@ -324,6 +324,11 @@ class LiveSport(simpleplugin.Plugin):
             self.log('***** 2')
 
             if not self._listing:
+                try:
+                    if self._progress:
+                        self._progress.close()
+                except:
+                    pass
                 self.logd('update', 'self._listing None')
                 return
 
@@ -376,8 +381,11 @@ class LiveSport(simpleplugin.Plugin):
         finally:
             xbmc.sleep(500)
             self.log('***** 6')
-            if self._progress:
-                self._progress.close()
+            try:
+                if self._progress:
+                    self._progress.close()
+            except:
+                pass
 
     def is_update(self):
         """
@@ -854,13 +862,6 @@ class LiveSport(simpleplugin.Plugin):
                 still = still - 1
                 continue
 
-            # if self._leagues.get(league, None) is not None:
-            #     if not self._leagues[league]:
-            #         still = still - 1
-            #         continue
-            # else:
-            #     self._add_league(league)
-
             sport = os.path.basename(urlparse(icon_sport).path).split('.')[0]
 
             icon_sport = os.path.join(self.dir('media'), '{}.png'.format(sport))
@@ -916,8 +917,6 @@ class LiveSport(simpleplugin.Plugin):
                 self.log(theme_artwork)
 
                 art.language = self._language
-
-                # Light|Dark|Blue|Transparent
 
                 if theme_artwork == 0:  # Light
                     art.set_light_theme()
@@ -1244,15 +1243,11 @@ class LiveSport(simpleplugin.Plugin):
         return l
 
     def _get_match_center_mini(self):
-        # center = self.http_get(
-        #     'https://moon.livesport.ws/engine/modules/sports/sport_template_loader.php?'
-        #     'from=showfull&template=match/main_match_center_mini_refresher')
         try:
             center = self.get_http(
                 'https://moon.livesport.ws/engine/modules/sports/sport_template_loader.php?'
                 'from=showfull&template=match/main_match_center_mini_refresher').content
         except Exception as e:
-            # xbmcgui.Dialog().notification(self.name, str(e), self.icon, 2000)
             self.logd('ERROR GET MATCH CENTER MINI', str(e))
             return None
 

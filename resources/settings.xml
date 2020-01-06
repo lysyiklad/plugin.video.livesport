@@ -38,5 +38,7 @@
 		<setting id="scan_service" type="number" label="10007" default="180" visible="eq(-1,true)"/>
 		<setting id="is_info_fullscreenvideo" type="bool" label="10022" default="false" visible="true"/>
 		<setting type="lsep" label='10005'/>
+		<setting id="date_update_service" type="text" label="date_update_service" default="" visible="true"/>
+
 	</category>
 </settings>
