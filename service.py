@@ -112,8 +112,8 @@ class Monitor(xbmc.Monitor):
                 if self.background is None:
                     plugin.log('SKIN RESOLUTION WIDHT - %s HEIGHT %s' % (widht, height))
                     if widht == 1920 and height == 1440:  # WIDHT - 1920 HEIGHT 1440
-                        row = 30
-                        pb = (100, 150, 200, 500)
+                        row = 26
+                        pb = (100, 150, 200, 650)
                     elif widht == 1920 and height == 1080:  # SKIN RESOLUTION WIDHT - 1920 HEIGHT 1080
                         row = 28
                         pb = (100, 100, 200, 200)
