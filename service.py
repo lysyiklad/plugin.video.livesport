@@ -111,36 +111,33 @@ class Monitor(xbmc.Monitor):
                 row = 20
                 if self.background is None:
                     plugin.log('SKIN RESOLUTION WIDHT - %s HEIGHT %s' % (widht, height))
+                    if widht == 1920 and height == 1440:  # WIDHT - 1920 HEIGHT 1440
+                        row = 30
+                        pb = (100, 150, 200, 500)
+                    elif widht == 1920 and height == 1080:  # SKIN RESOLUTION WIDHT - 1920 HEIGHT 1080
+                        row = 28
+                        pb = (100, 100, 200, 200)
+                    else:  # SKIN RESOLUTION WIDHT - 1280 HEIGHT 720
+                        row = 20
+                        pb = (50, 50, 100, 100)
+
                     self.background = xbmcgui.ControlImage(1, 1, 1, 1,
                                                            os.path.join(plugin.dir('media'), "background.png"))
                     self.window.addControl(self.background)
-
-                    if widht == 1920 and height == 1440:  # WIDHT - 1920 HEIGHT 1440
-                        self.background.setPosition(100, 150)
-                        self.background.setWidth(widht - 200)
-                        self.background.setHeight(height - 640)
-                        row = 26
-                    elif widht == 1920 and height == 1080:  # SKIN RESOLUTION WIDHT - 1920 HEIGHT 1080
-                        self.background.setPosition(100, 100)
-                        self.background.setWidth(widht - 200)
-                        self.background.setHeight(height - 200)
-                        row = 28
-                    else:  # SKIN RESOLUTION WIDHT - 1280 HEIGHT 720
-                        self.background.setPosition(50, 50)
-                        self.background.setWidth(widht - 100)
-                        self.background.setHeight(height - 100)
-                        row = 20
+                    self.background.setPosition(pb[0], pb[1])
+                    self.background.setWidth(widht - pb[2])
+                    self.background.setHeight(height - pb[3])
 
                 if self.list_left is None and self.list_right is None:
                     if widht == 1920 and height == 1440:  # WIDHT - 1920 HEIGHT 1440
-                        self.list_left = xbmcgui.ControlList(100, 170, (widht - 200) / 2, height - 500, font='font10')
+                        pll = (100, 170, 200, pb[3])
                     elif widht == 1920 and height == 1080:  # SKIN RESOLUTION WIDHT - 1920 HEIGHT 1080
-                        self.list_left = xbmcgui.ControlList(100, 110, int((widht - 200) / 2), height - 200,
-                                                             font='font10')
+                        pll = (100, 110, 200, pb[3])
                     else:  # SKIN RESOLUTION WIDHT - 1280 HEIGHT 720
-                        self.list_left = xbmcgui.ControlList(50, 50, (widht - 100) / 2, height - 100, font='font10')
-                    # self.list_left.setItemHeight(21)
-                    # print 'self.list_left.getItemHeight() %s' % self.list_left.getItemHeight()
+                        pll = (50, 50, 100, pb[3])
+                        # self.list_left.setItemHeight(5)
+                    self.list_left = xbmcgui.ControlList(pll[0], pll[1], int((widht - pll[2]) / 2), height - pll[3],
+                                                         font='font10')
                     self.window.addControl(self.list_left)
 
                     if self._id is None:
@@ -148,36 +145,34 @@ class Monitor(xbmc.Monitor):
                     else:
                         status = plugin.get_labels_status_match(self._id)
 
-                    if len(status) < row:
-                        self.list_left.addItems(status)
-                    else:
-                        self.list_left.addItems(status[:row])
-
                     if widht == 1920 and height == 1440:  # WIDHT - 1920 HEIGHT 1440
-                        self.list_right = xbmcgui.ControlList((widht - 200) / 2 + 150, 170, (widht - 200) / 2,
-                                                              height - 500, font='font10')
+                        plr = (200, 150, 170, 200, pb[3])
                     elif widht == 1920 and height == 1080:  # SKIN RESOLUTION WIDHT - 1920 HEIGHT 1080
-                        self.list_right = xbmcgui.ControlList(int((widht - 200) / 2) + 150, 110, int((widht - 200) / 2),
-                                                              height - 200,
-                                                              font='font10')
+                        plr = (200, 150, 110, 200, pb[3])
                     else:  # SKIN RESOLUTION WIDHT - 1280 HEIGHT 720
-                        self.list_right = xbmcgui.ControlList((widht - 100) / 2 + 50, 50, (widht - 100) / 2,
-                                                              height - 100,
-                                                              font='font10')
+                        plr = (100, 50, 50, 100, pb[3])
 
+                    self.list_right = xbmcgui.ControlList((widht - plr[0]) / 2 + plr[1], plr[2], (widht - plr[3]) / 2,
+                                                          height - plr[4], font='font10')
                     self.window.addControl(self.list_right)
 
                     live = plugin.get_labels_live()
 
-                    if len(status) < row:
+                    if len(status) <= row and len(live) <= row:
+                        self.list_left.addItems(status)
                         self.list_right.addItems(live)
                     else:
-                        self.list_right.addItems(status[row:] + live)
+                        if len(status) >= row:
+                            self.list_left.addItems(status[:row])
+                            self.list_right.addItems(status[row:] + live)
+                        else:
+                            r = row - len(status)
+                            self.list_left.addItems(status + live[:r])
+                            self.list_right.addItems(live[r:])
 
                 self.showing = True
         else:
             if self.showing == True and self.background:
-
                 if self.background is not None:
                     self.window.removeControl(self.background)
                     self.background = None

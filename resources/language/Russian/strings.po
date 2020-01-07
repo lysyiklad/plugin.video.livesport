@@ -99,6 +99,19 @@ msgctxt "#10022"
 msgid "Information in the window full screen video"
 msgstr "Информация во время воспроизведения видео"
 
+msgctxt "#10023"
+msgid "Show live matches"
+msgstr "Показывать результаты матчей в прямом эфире"
+
+msgctxt "#10024"
+msgid "Show game review"
+msgstr "Показывать обзор игры"
+
+msgctxt "#10025"
+msgid "Show game statistics"
+msgstr "Показывать статистику игры"
+
+
 
 
 
@@ -270,3 +283,7 @@ msgstr "Дополнительно"
 msgctxt "#30041"
 msgid "Select leagues to create ArtWork..."
 msgstr "Выбор турниров для создания ArtWork..."
+
+msgctxt "#30042"
+msgid "Completed"
+msgstr "Законченные"

@@ -25,7 +25,7 @@ import datetime
 from builtins import range
 from builtins import str
 
-#URL_NOT_LINKS = 'https://www.ixbt.com/multimedia/video-methodology/bitrates/avc-1080-25p/1080-25p-10mbps.mp4'
+# URL_NOT_LINKS = 'https://www.ixbt.com/multimedia/video-methodology/bitrates/avc-1080-25p/1080-25p-10mbps.mp4'
 URL_NOT_LINKS = 'http://tv-na-stene.ru/files/HD%20Red.mkv'
 
 HEADERS_HTTP = {'User-Agent':
@@ -78,7 +78,6 @@ class LiveSport(simpleplugin.Plugin):
         # web_pdb.set_trace()
 
         self.load()
-
 
     @staticmethod
     def create_id(key):
@@ -1004,7 +1003,7 @@ class LiveSport(simpleplugin.Plugin):
         """
         Парсим страницу для списка ссылок
         :param html:
-        :return:
+        :return: список словарей
         """
 
         def td_class_text(tr, ntag):
@@ -1015,9 +1014,19 @@ class LiveSport(simpleplugin.Plugin):
 
         links = []
 
-        data = json.loads(html)
+        json_data = json.loads(html)
 
-        broadcast = data.get('broadcast', None)
+        links.append({
+            'data': {
+                'broadcast_status': json_data.get('broadcast_status', None),
+                'events': json_data.get('events', None),
+                'lang': json_data.get('lang', None)
+            },
+            'status': 'data',
+            'label': ''
+        })
+
+        broadcast = json_data.get('broadcast', None)
 
         if broadcast is not None:
             links.append({
@@ -1064,10 +1073,10 @@ class LiveSport(simpleplugin.Plugin):
                                 'href': tr.find('a')['href'],
                             }
                         )
-        reviews = data.get('reviews', None)
+        reviews = json_data.get('reviews', None)
         if reviews is not None:
             links.append({
-                'label': u'[COLOR FF0084FF][B]{}[/B][/COLOR]'.format(_('REVIEWS:')),
+                'label': '[COLOR FF0084FF][B]{}[/B][/COLOR]'.format(_('REVIEWS:')),
                 'status': 'title'
             })
 
@@ -1133,10 +1142,10 @@ class LiveSport(simpleplugin.Plugin):
                                 number = s.text
                     link = link + u'    ' + number + u'   ' + icon + u'   ' + name
                     links.append({'label': link, 'status': 'info'})
-        eventsstat = data.get('eventsstat', None)
+        eventsstat = json_data.get('eventsstat', None)
         if eventsstat is not None:
             links.append({
-                'label': u'[COLOR FF0084FF][B]{}[/B][/COLOR]'.format(_('STATISTICS:')),
+                'label': '[COLOR FF0084FF][B]{}[/B][/COLOR]'.format(_('STATISTICS:')),
                 'status': 'title'
             })
             content = eventsstat[0].get('content', None)
@@ -1160,15 +1169,29 @@ class LiveSport(simpleplugin.Plugin):
         :param id:
         :return:
         """
+        if not links:
+            return []
 
         title = self.get(id_, 'label')
-        info_mini = self._get_mini_info_math(self.get(id_, 'id_event'))
+        data = links[0]['data']
+
+        scorel = '' if data['events'] is None else data['events'][0]
+        scorer = '' if data['events'] is None else data['events'][1]
+
+        # info_mini = self._get_mini_info_math(self.get(id_, 'id_event'))
+        # plot = u'%s\n%s\n%s\n\n[B]                  %s  :  %s[/B]' % (
+        #     self.time_to_local(self.get(id_, 'date')).strftime('%d.%m %H:%M'),
+        #     self.get(id_, 'league'),
+        #     self.get(id_, 'label'),
+        #     info_mini['scorel'],
+        #     info_mini['scorer']
+        # )
         plot = u'%s\n%s\n%s\n\n[B]                  %s  :  %s[/B]' % (
             self.time_to_local(self.get(id_, 'date')).strftime('%d.%m %H:%M'),
             self.get(id_, 'league'),
             self.get(id_, 'label'),
-            info_mini['scorel'],
-            info_mini['scorer']
+            scorel,
+            scorer
         )
 
         l = []
@@ -1188,8 +1211,15 @@ class LiveSport(simpleplugin.Plugin):
                   'is_playable': False,
                   'is_folder': False})
 
-        l.append({'label': u'[B]{}    {} : {}    {} [/B]'.format(self.get(id_, 'home'), info_mini['scorel'],
-                                                                 info_mini['scorer'], self.get(id_, 'guest')),
+        # l.append({'label': u'[B]{}    {} : {}    {} [/B]'.format(self.get(id_, 'home'), info_mini['scorel'],
+        #                                                          info_mini['scorer'], self.get(id_, 'guest')),
+        #           'info': {'video': {'title': title, 'plot': plot}},
+        #           'art': art,
+        #           'url': '',
+        #           'is_playable': False,
+        #           'is_folder': False})
+        l.append({'label': u'[B]{}    {} : {}    {} [/B]'.format(self.get(id_, 'home'), scorel, scorer,
+                                                                 self.get(id_, 'guest')),
                   'info': {'video': {'title': title, 'plot': plot}},
                   'art': art,
                   'url': '',
@@ -1225,13 +1255,15 @@ class LiveSport(simpleplugin.Plugin):
                               'art': art,
                               'url': self.get_url(action='play', href=link['href'], id=id_),
                               'is_playable': True})
-            else:
+            elif link['status'] == 'info' or link['status'] == 'title':
                 l.append({'label': link['label'],
                           'info': {'video': {'title': title, 'plot': plot}},
                           'art': art,
                           'url': '',
                           'is_playable': False,
                           'is_folder': False})
+            else:
+                pass
 
         if len(l) < 4:
             l.append({'label': _('Stream information will be available 30 minutes prior to the begining of an event.'),
@@ -1295,6 +1327,9 @@ class LiveSport(simpleplugin.Plugin):
 
     def get_labels_live(self):
 
+        if not self.get_setting('is_live_fullscreenvideo'):
+            return []
+
         labels = [u'[UPPERCASE][COLOR FF0084FF][B]{}:[/B][/COLOR][/UPPERCASE]'.format(_('Live'))]
 
         center = self._get_match_center_mini()
@@ -1320,30 +1355,87 @@ class LiveSport(simpleplugin.Plugin):
 
         return labels
 
+    # def get_labels_live(self):
+    #
+    #     labels = [u'[UPPERCASE][COLOR FF0084FF][B]{}:[/B][/COLOR][/UPPERCASE]'.format(_('Live'))]
+    #
+    #     try:
+    #         for item in list(self._listing.values()):
+    #
+    #             is_live = False
+    #
+    #             scorel = ''
+    #             scorer = ''
+    #
+    #             url_links = item.get('url_links', None)
+    #             if url_links is not None:
+    #                 data = self.get_http(url_links).json()
+    #                 if data.get('broadcast_status', None) == 1:
+    #                     events = data.get('events', None)
+    #                     if events is not None:
+    #                         if events[2] != _('Completed'):
+    #                             scorel = events[0]
+    #                             scorer = events[1]
+    #                             is_live = True
+    #
+    #             if is_live:
+    #                 labels.append(u'[B]{} - {}[/B]  {}'.format(scorel, scorer, item['label']))
+    #
+    #     except Exception as e:
+    #         self.logd('._get_labels_live() ERROR', str(e))
+    #
+    #     return labels
+
     def get_labels_status_match(self, id_):
 
         labels = []
 
         links = self.links(id_)
 
-        info_mini = self._get_mini_info_math(self.get(id_, 'id_event'))
+        # info_mini = self._get_mini_info_math(self.get(id_, 'id_event'))
 
         labels.append(u'{}       {}'.format(self.time_to_local(self.get(id_, 'date')).strftime('%d.%m %H:%M'),
                                             self.get(id_, 'league')))
 
-        labels.append(u'[B]{}    {} : {}    {} [/B]'.format(self.get(id_, 'home'), info_mini['scorel'],
-                                                            info_mini['scorer'], self.get(id_, 'guest')))
+        # labels.append(u'[B]{}    {} : {}    {} [/B]'.format(self.get(id_, 'home'), info_mini['scorel'],
+        #                                                     info_mini['scorer'], self.get(id_, 'guest')))
+
+        data = links[0]['data']
+
+        scorel = '' if data['events'] is None else data['events'][0]
+        scorer = '' if data['events'] is None else data['events'][1]
+
+        labels.append(u'[B]{}    {} : {}    {} [/B]'.format(self.get(id_, 'home'), scorel,
+                                                            scorer, self.get(id_, 'guest')))
+
+        label_broadcast = '[COLOR FF0084FF][B]{}[/B][/COLOR]'.format(_('BROADCASTS:'))
+        label_reviews = '[COLOR FF0084FF][B]{}[/B][/COLOR]'.format(_('REVIEWS:'))
+        label_statistic = '[COLOR FF0084FF][B]{}[/B][/COLOR]'.format(_('STATISTICS:'))
+
+        is_reviews = self.get_setting('is_reviews_fullscreenvideo')
+        is_statistics = self.get_setting('is_statistic_fullscreenvideo')
+        is_append = True
 
         for link in links:
-            if link.get('status', '') != 'broadcast':
-                if link['label'] != '[COLOR FF0084FF][B]{}[/B][/COLOR]'.format(_('BROADCASTS:')):
+            if link.get('status', '') != 'broadcast' \
+                    and link.get('status', '') != 'data' \
+                    and link['label'] != label_broadcast:
+                if link['label'] == label_reviews and not is_reviews:
+                    is_append = False
+                if link['label'] == label_statistic:
+                    if not is_statistics:
+                        is_append = False
+                    else:
+                        is_append = True
+
+                if is_append:
                     labels.append(link['label'])
 
         return labels
 
-    @staticmethod
-    def remove_square_brackets(txt):
-        return re.sub('[\[].*?[\]]', '', txt)
+    # @staticmethod
+    # def remove_square_brackets(txt):
+    #     return re.sub('[\[].*?[\]]', '', txt)
 
     # @staticmethod
     # def format_str_column_width_new(label, column_width):

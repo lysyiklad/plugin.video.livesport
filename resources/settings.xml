@@ -37,8 +37,12 @@
 		<setting id="is_update_service" type="bool" label="10006" default="false" visible="true"/>
 		<setting id="scan_service" type="number" label="10007" default="180" visible="eq(-1,true)"/>
 		<setting id="is_info_fullscreenvideo" type="bool" label="10022" default="false" visible="true"/>
+		<setting id="is_live_fullscreenvideo" type="bool" label="10023" default="true" visible="eq(-1,true)"/>
+		<setting id="is_reviews_fullscreenvideo" type="bool" label="10024" default="true" visible="eq(-2,true)"/>
+		<setting id="is_statistic_fullscreenvideo" type="bool" label="10025" default="true" visible="eq(-3,true)"/>
+
 		<setting type="lsep" label='10005'/>
-		<setting id="date_update_service" type="text" label="date_update_service" default="" visible="true"/>
+		<setting id="date_update_service" type="text" label="date_update_service" default="" visible="false"/>
 
 	</category>
 </settings>
