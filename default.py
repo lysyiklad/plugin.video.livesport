@@ -1,7 +1,7 @@
 ﻿# -*- coding: utf-8 -*-
 
 # import xbmcgui
-# import xbmc
+import xbmc
 import xbmcaddon
 
 from resources.lib.livesport import plugin
@@ -13,7 +13,7 @@ def root(params):
 
 
 @plugin.action()
-def extra(params):
+def extra():
     return plugin.create_listing_extra()
 
 
@@ -57,5 +57,4 @@ def settings():
 if __name__ == '__main__':
     # import web_pdb
     # web_pdb.set_trace()
-
     plugin.run()

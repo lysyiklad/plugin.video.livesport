@@ -114,6 +114,16 @@ msgctxt "#10025"
 msgid "Show game statistics"
 msgstr ""
 
+msgctxt "#10026"
+msgid "Default directory"
+msgstr ""
+
+msgctxt "#10027"
+msgid "Main menu"
+msgstr ""
+
+
+
 
 
 

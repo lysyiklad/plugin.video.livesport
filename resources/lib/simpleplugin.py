@@ -11,11 +11,12 @@ from __future__ import division
 from __future__ import unicode_literals
 
 from future import standard_library
+
 standard_library.install_aliases()
 from builtins import zip
 from builtins import str
-#from past.builtins import basestring
-#from past.utils import old_div
+# from past.builtins import basestring
+# from past.utils import old_div
 from builtins import object
 import os
 import sys
@@ -112,7 +113,7 @@ def debug_exception(logger=None):
         logger('Unhandled exception detected!')
         logger('*** Start diagnostic info ***')
         logger('System info: {0}'.format(uname()))
-        #logger('OS info: {0}'.format(xbmc.getInfoLabel('System.OSVersionInfo')))
+        # logger('OS info: {0}'.format(xbmc.getInfoLabel('System.OSVersionInfo')))
         logger('Kodi version: {0}'.format(
             xbmc.getInfoLabel('System.BuildVersion'))
         )
@@ -126,7 +127,7 @@ def debug_exception(logger=None):
                     context += '{0}: {1}'.format(str(i).rjust(5), line)
         logger('Code context:\n' + context)
         # logger('Global variables:\n' + _format_vars(frame_info[0].f_globals))
-        #logger('Local variables:\n' + _format_vars(frame_info[0].f_locals))
+        # logger('Local variables:\n' + _format_vars(frame_info[0].f_locals))
         logger('**** End diagnostic info ****')
         raise
 
@@ -151,6 +152,7 @@ class Params(dict):
             foo = params['foo']  # Access by key
             bar = params.bar  # Access through property. Both variants are equal
     """
+
     def __getattr__(self, key):
         return self.get(key)
 
@@ -184,6 +186,7 @@ class Storage(MutableMapping):
     .. note:: After exiting :keyword:`with` block a :class:`Storage` instance is invalidated.
         Storage contents are saved to disk only for a new storage or if the contents have been changed.
     """
+
     def __init__(self, storage_dir, filename='storage.pcl'):
         """
         Class constructor
@@ -297,6 +300,7 @@ class MemStorage(MutableMapping):
         will be stored.
     :type window_id: int
     """
+
     def __init__(self, storage_id, window_id=10000):
         """
         :type storage_id: str
@@ -386,6 +390,7 @@ class Addon(object):
     :param id_: addon id, e.g. 'plugin.video.foo' (optional)
     :type id_: str
     """
+
     def __init__(self, id_=''):
         """
         Class constructor
@@ -512,7 +517,7 @@ class Addon(object):
         :return: UI string in the current language
         :rtype: str
         """
-        return self._addon.getLocalizedString(id_)  #.encode('utf-8')
+        return self._addon.getLocalizedString(id_)  # .encode('utf-8')
 
     def get_setting(self, id_, convert=True):
         """
@@ -574,7 +579,7 @@ class Addon(object):
         :type level: int
         """
         if isinstance(message, bool):
-            message = str(message)        
+            message = str(message)
         if isinstance(message, str):
             message = message.encode('utf-8')
         xbmc.log(b'{0} [v.{1}]: {2}'.format(self.id, self.version, message), level)
@@ -621,8 +626,7 @@ class Addon(object):
         :param message: message to write to the Kodi log
         :type message: str
         """
-        self.log(message, xbmc.LOGDEBUG)        
-        
+        self.log(message, xbmc.LOGDEBUG)
 
     def logd(self, func, message):
         if isinstance(message, bool):
@@ -633,8 +637,8 @@ class Addon(object):
             func = str(func)
         if isinstance(func, str):
             func = func.encode('utf-8')
-        
-        xbmc.log(b'{0} [v.{1}]: <{2}> - {3}'.format(self.id, self.version, func, message),  xbmc.LOGDEBUG)
+
+        xbmc.log(b'{0} [v.{1}]: <{2}> - {3}'.format(self.id, self.version, func, message), xbmc.LOGDEBUG)
 
     def get_storage(self, filename='storage.pcl'):
         """
@@ -731,12 +735,15 @@ class Addon(object):
         :type duration: int
         :raises ValueError: if duration is zero or negative
         """
+
         def outer_wrapper(func):
             @wraps(func)
             def inner_wrapper(*args, **kwargs):
                 with self.get_storage('__cache__.pcl') as cache:
                     return self._get_cached_data(cache, func, duration, *args, **kwargs)
+
             return inner_wrapper
+
         return outer_wrapper
 
     def mem_cached(self, duration=10):
@@ -754,12 +761,15 @@ class Addon(object):
         :type duration: int
         :raises ValueError: if duration is zero or negative
         """
+
         def outer_wrapper(func):
             @wraps(func)
             def inner_wrapper(*args, **kwargs):
                 cache = self.get_mem_storage('***cache***')
                 return self._get_cached_data(cache, func, duration, *args, **kwargs)
+
             return inner_wrapper
+
         return outer_wrapper
 
     def gettext(self, ui_string):
@@ -829,7 +839,9 @@ class Addon(object):
             raw_strings_hash = md5(raw_strings).hexdigest()
             gettext_pcl = '__gettext__.pcl'
             with self.get_storage(gettext_pcl) as ui_strings_map:
-                if (not os.path.exists(os.path.join(self._configdir, gettext_pcl)) or raw_strings_hash != ui_strings_map.get('hash', '')):
+                if (not os.path.exists(
+                        os.path.join(self._configdir, gettext_pcl)) or raw_strings_hash != ui_strings_map.get('hash',
+                                                                                                              '')):
                     ui_strings = self._parse_po(raw_strings.split('\n'))
                     self._ui_strings_map = {
                         'hash': raw_strings_hash,
@@ -856,6 +868,9 @@ class Addon(object):
                 ui_strings[re.search(r'"(.*?)"', string, re.U).group(1)] = string_id
                 string_id = None
         return ui_strings
+
+
+FOLDER = ('', 'live', 'football', 'hockey', 'basketball', 'tennis', 'american_football', 'race', 'boxing', 'offline')
 
 
 class Plugin(Addon):
@@ -998,6 +1013,7 @@ class Plugin(Addon):
     If an action callable performs any actions other than creating a listing or
     resolving a playable URL, it must return ``None``.
     """
+
     def __init__(self, id_=''):
         """
         Class constructor
@@ -1101,6 +1117,7 @@ class Plugin(Addon):
         :type name: str
         :raises SimplePluginError: if the action with such name is already defined.
         """
+
         def wrap(func, name=name):
             if name is None:
                 name = func.__name__
@@ -1108,6 +1125,7 @@ class Plugin(Addon):
                 raise SimplePluginError('Action "{0}" already defined!'.format(name))
             self.actions[name] = func
             return func
+
         return wrap
 
     def run(self):
@@ -1117,15 +1135,21 @@ class Plugin(Addon):
         :raises SimplePluginError: if unknown action string is provided.
         """
 
-        self.log_debug(sys.argv)
+        self.logd('run', 'Container.FolderPath - %s' % xbmc.getInfoLabel('Container.FolderPath'))
+        self.logd('run', sys.argv)
         self._handle = int(sys.argv[1])
         self._params = self.get_params(sys.argv[2][1:])
-        self.log_debug(str(self))
+        self.logd('run', str(self))
         with debug_exception(self.log_error):
             result = self._resolve_function()
-            self.log_debug('Action return value: {0}'.format(str(result)))
+            self.logd('run', 'Action return value: {0}'.format(str(result)))
             if isinstance(result, (list, GeneratorType)):
                 self._add_directory_items(self.create_listing(result))
+                folder_default = self.get_setting('folder_default')
+                if xbmc.getInfoLabel('Container.FolderName') != self.name and folder_default:
+                    xbmc.executebuiltin(
+                        'ActivateWindow(videos,"plugin://plugin.video.livesport/?action=listing&sort=%s",false]) )' %
+                        FOLDER[folder_default])
             elif isinstance(result, basestring):
                 self._set_resolved_url(self.resolve_url(result))
             elif isinstance(result, ListContext):
@@ -1133,7 +1157,7 @@ class Plugin(Addon):
             elif isinstance(result, PlayContext):
                 self._set_resolved_url(result)
             else:
-                self.log_debug('The action/route has not returned any valid data to process.')
+                self.logd('run', 'The action/route has not returned any valid data to process.')
 
     def _resolve_function(self):
         """
@@ -1231,16 +1255,16 @@ class Plugin(Addon):
 
         if major_version < '18':
             if item.get('info') \
-              and item['info'].get('video'):
+                    and item['info'].get('video'):
                 for fields in ['genre', 'writer', 'director', 'country', 'credits']:
                     if item['info']['video'].get(fields) \
-                      and isinstance(item['info']['video'][fields], list):
+                            and isinstance(item['info']['video'][fields], list):
                         item['info']['video'][fields] = ' / '.join(item['info']['video'][fields])
         if major_version < '15':
             if item.get('info') \
-              and item['info'].get('video'):
+                    and item['info'].get('video'):
                 if item['info']['video'].get('duration'):
-                    item['info']['video']['duration'] = (int(item['info']['video']['duration']/60))
+                    item['info']['video']['duration'] = (int(item['info']['video']['duration'] / 60))
 
         if major_version >= '16':
             art = item.get('art')
@@ -1339,6 +1363,18 @@ class Plugin(Addon):
         if context.view_mode is not None:
             xbmc.executebuiltin('Container.SetViewMode({0})'.format(context.view_mode))
 
+        # folder_path = xbmc.getInfoLabel('Container.FolderPath')
+        # folder_name = xbmc.getInfoLabel('Container.FolderName')
+        # self.logd('_add_directory_items folder_path', folder_path)
+        # self.logd('_add_directory_items folder_name', folder_name)
+        # if not folder_name:
+        #     xbmc.executebuiltin(
+        #         ' ActivateWindow(videos,"%s",true]) )' % 'plugin://plugin.video.livesport/?action=listing&sort=football')
+        # elif folder_path == 'plugin://plugin.video.livesport/':
+        #     if self._handle == 1 or (self._handle - self.get_setting('handle')) > 1:
+        #         xbmc.executebuiltin(' ActivateWindow(videos,"%s",true]) )' % 'plugin://plugin.video.livesport/?action=listing&sort=football')
+        # self.set_setting('handle', self._handle)
+
     def _set_resolved_url(self, context):
         """
         Resolve a playable URL
@@ -1356,8 +1392,7 @@ class Plugin(Addon):
         # web_pdb.set_trace()
 
         xbmcplugin.setResolvedUrl(self._handle, context.succeeded, list_item)
-        #xbmc.Player().play(context.path, list_item)
-
+        # xbmc.Player().play(context.path, list_item)
 
 
 class RoutedPlugin(Plugin):
@@ -1368,6 +1403,7 @@ class RoutedPlugin(Plugin):
     :param id_: plugin's id, e.g. 'plugin.video.foo' (optional)
     :type id_: str
     """
+
     def __init__(self, id_=''):
         """
         :param id_: plugin's id, e.g. 'plugin.video.foo' (optional)
@@ -1559,6 +1595,7 @@ class RoutedPlugin(Plugin):
             The name must be unique.
         :type name: str
         """
+
         def wrapper(func, pattern=pattern, name=name):
             if name is None:
                 name = func.__name__
@@ -1570,6 +1607,7 @@ class RoutedPlugin(Plugin):
                                       ).replace('float:', 'float__')
             self._routes[name] = Route(pattern, func)
             return func
+
         return wrapper
 
     def _resolve_function(self):
