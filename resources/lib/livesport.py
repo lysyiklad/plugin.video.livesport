@@ -8,6 +8,7 @@ from future import standard_library
 
 standard_library.install_aliases()
 import requests
+import pickle
 import re
 from . import simpleplugin, makeart
 import xbmcgui
@@ -73,6 +74,8 @@ class LiveSport(simpleplugin.Plugin):
             self._site = self.get_setting('url_site')
 
         self._progress = xbmcgui.DialogProgressBG()
+
+        self._icons_league_pcl = os.path.join(self.profile_dir, 'iconleague.pcl')
 
         # import web_pdb
         # web_pdb.set_trace()
@@ -156,9 +159,10 @@ class LiveSport(simpleplugin.Plugin):
     def _selected_leagues(self, leagues, title):
 
         selected_old = self._get_selected_leagues(leagues)
-
-        selected = xbmcgui.Dialog().multiselect(title, leagues.keys(), preselect=selected_old)
-
+        if self.version_kodi < 17:
+            selected = xbmcgui.Dialog().multiselect(title, leagues.keys())
+        else:
+            selected = xbmcgui.Dialog().multiselect(title, leagues.keys(), preselect=selected_old, useDetails=False)
         if selected is not None and selected != selected_old:
             self._set_selected_leagues(selected, leagues)
             self.logd('selected_leagues', selected)
@@ -262,6 +266,10 @@ class LiveSport(simpleplugin.Plugin):
                       (id_, tnd, tsn), links)
             try:
                 html = self.get_http(self.get(id_, 'url_links')).content
+                # file_html = os.path.join(self.path, 'links.html')
+                # if not os.path.exists(file_html):
+                #     with open(file_html, 'wb') as f:
+                #         f.write(html)
             except Exception as e:
                 xbmcgui.Dialog().notification(self.name, str(e), self.icon, 2000)
                 self.logd('ERROR LINKS', str(e))
@@ -284,6 +292,7 @@ class LiveSport(simpleplugin.Plugin):
         :return:
         """
 
+
         self.load()
 
         self.logd('plugin.update - self.settings_changed', self.settings_changed)
@@ -304,8 +313,6 @@ class LiveSport(simpleplugin.Plugin):
 
             self._progress.update(1, message=_('Loading site data ...'))
 
-            # file_html = os.path.join(self.path, 'livesport.html')
-
             # import web_pdb
             # web_pdb.set_trace()
 
@@ -313,8 +320,10 @@ class LiveSport(simpleplugin.Plugin):
 
             # self.log(html)
 
-            # with open(file_html, 'wb') as f:
-            #     f.write(html)
+            # file_html = os.path.join(self.path, 'listing.html')
+            # if not os.path.exists(file_html):
+            #     with open(file_html, 'wb') as f:
+            #         f.write(html)
 
             # html = file_read(file_html)
 
@@ -836,6 +845,11 @@ class LiveSport(simpleplugin.Plugin):
                         }
                     }
         """
+        icons_league = {}
+
+        if os.path.exists(self._icons_league_pcl):
+            with open(self._icons_league_pcl, 'rb') as f:
+                icons_league = pickle.load(f)
 
         listing = {}
 
@@ -860,6 +874,31 @@ class LiveSport(simpleplugin.Plugin):
             if not self._is_league(league, self._leagues):
                 still = still - 1
                 continue
+
+            icon_league = ''
+
+            if league not in icons_league:
+                try:
+                    href = self.get_setting('url_site') + tag_a['href']
+
+                    file_html = os.path.join(self.path, 'links2.html')
+
+                    h = self.get_http(href).content
+
+                    s = bs4.BeautifulSoup(h, 'html.parser')
+
+                    tag_figure = s.find('figure', {'class': 'visual'})
+                    tag_image = tag_figure.find('img')
+                    icons_league[league] = tag_image['src']
+                    icon_league = tag_image['src']
+
+                    with open(self._icons_league_pcl, 'wb') as f:
+                        pickle.dump(icons_league, f)
+
+                except:
+                    pass
+            else:
+                icon_league = icons_league[league]
 
             sport = os.path.basename(urlparse(icon_sport).path).split('.')[0]
 
@@ -891,12 +930,12 @@ class LiveSport(simpleplugin.Plugin):
             tags_div = tag_a.find(
                 'div', {'class': 'commands commands_match_center'}).findAll('div')
 
-            icon_home = tags_div[1].contents[1]['data-src'].replace('?18x18=1', '')
+            icon_home = tags_div[1].findAll('img')[0]['data-src'].replace('?18x18=1', '')
             home = tags_div[0].text
-            icon_guest = tags_div[1].contents[3]['data-src'].replace('?18x18=1', '')
+            icon_guest = tags_div[1].findAll('img')[1]['data-src'].replace('?18x18=1', '')
             guest = tags_div[2].text
 
-            icon = icon_sport
+            icon = icon_sport if not icon_league else icon_league
             poster = ''
             thumb = ''
             fanart = os.path.join(self.dir('media'), 'fanart_{}.jpg'.format(sport))

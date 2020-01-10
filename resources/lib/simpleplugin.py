@@ -870,9 +870,6 @@ class Addon(object):
         return ui_strings
 
 
-FOLDER = ('', 'live', 'football', 'hockey', 'basketball', 'tennis', 'american_football', 'race', 'boxing', 'offline')
-
-
 class Plugin(Addon):
     """
     Plugin class
@@ -1135,7 +1132,6 @@ class Plugin(Addon):
         :raises SimplePluginError: if unknown action string is provided.
         """
 
-        self.logd('run', 'Container.FolderPath - %s' % xbmc.getInfoLabel('Container.FolderPath'))
         self.logd('run', sys.argv)
         self._handle = int(sys.argv[1])
         self._params = self.get_params(sys.argv[2][1:])
@@ -1145,11 +1141,6 @@ class Plugin(Addon):
             self.logd('run', 'Action return value: {0}'.format(str(result)))
             if isinstance(result, (list, GeneratorType)):
                 self._add_directory_items(self.create_listing(result))
-                folder_default = self.get_setting('folder_default')
-                if xbmc.getInfoLabel('Container.FolderName') != self.name and folder_default:
-                    xbmc.executebuiltin(
-                        'ActivateWindow(videos,"plugin://plugin.video.livesport/?action=listing&sort=%s",false]) )' %
-                        FOLDER[folder_default])
             elif isinstance(result, basestring):
                 self._set_resolved_url(self.resolve_url(result))
             elif isinstance(result, ListContext):
@@ -1362,18 +1353,6 @@ class Plugin(Addon):
                                   context.cache_to_disk)
         if context.view_mode is not None:
             xbmc.executebuiltin('Container.SetViewMode({0})'.format(context.view_mode))
-
-        # folder_path = xbmc.getInfoLabel('Container.FolderPath')
-        # folder_name = xbmc.getInfoLabel('Container.FolderName')
-        # self.logd('_add_directory_items folder_path', folder_path)
-        # self.logd('_add_directory_items folder_name', folder_name)
-        # if not folder_name:
-        #     xbmc.executebuiltin(
-        #         ' ActivateWindow(videos,"%s",true]) )' % 'plugin://plugin.video.livesport/?action=listing&sort=football')
-        # elif folder_path == 'plugin://plugin.video.livesport/':
-        #     if self._handle == 1 or (self._handle - self.get_setting('handle')) > 1:
-        #         xbmc.executebuiltin(' ActivateWindow(videos,"%s",true]) )' % 'plugin://plugin.video.livesport/?action=listing&sort=football')
-        # self.set_setting('handle', self._handle)
 
     def _set_resolved_url(self, context):
         """
