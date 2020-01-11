@@ -8,7 +8,6 @@ from resources.lib.livesport import plugin
 
 FOLDER = ('', 'live', 'football', 'hockey', 'basketball', 'tennis', 'american_football', 'race', 'boxing', 'offline')
 
-
 @plugin.action()
 def root(params):
     folder_default = plugin.get_setting('folder_default')
@@ -19,7 +18,6 @@ def root(params):
             'ActivateWindow(videos,"plugin://plugin.video.livesport/?action=listing&sort=%s", true])' % FOLDER[
                 folder_default])
         return None
-        # xbmc.executebuiltin('ActivateWindow(videos,"plugin://plugin.video.livesport/?action=listing&sort=football",true])')
     return plugin.create_listing_categories()
 
 

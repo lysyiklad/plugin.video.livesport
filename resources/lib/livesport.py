@@ -14,7 +14,7 @@ from . import simpleplugin, makeart
 import xbmcgui
 import xbmc
 import xbmcplugin
-from dateutil.tz import UTC, tzlocal, tzoffset
+from dateutil.tz import tzutc, tzlocal, tzoffset
 from dateutil.parser import *
 import dateutil
 import bs4
@@ -44,10 +44,10 @@ def file_read(file):
     return ''
 
 
-class LiveSport(simpleplugin.Plugin):
+class PluginSport(simpleplugin.Plugin):
 
     def __init__(self):
-        super(LiveSport, self).__init__()
+        super(PluginSport, self).__init__()
         global _
         self._dir = {'media': os.path.join(self.path, 'resources', 'media'),
                      'font': os.path.join(self.path, 'resources', 'data', 'font'),
@@ -63,8 +63,6 @@ class LiveSport(simpleplugin.Plugin):
 
         self._date_scan = None  # Время сканирования в utc
         self._listing = OrderedDict()
-        self._leagues = OrderedDict()
-        self._leagues_artwork = OrderedDict()
 
         self._language = xbmc.getInfoLabel('System.Language')  # Russian English
 
@@ -75,12 +73,13 @@ class LiveSport(simpleplugin.Plugin):
 
         self._progress = xbmcgui.DialogProgressBG()
 
+        self._leagues = OrderedDict()
+        self._leagues_artwork = OrderedDict()
+
         self._icons_league_pcl = os.path.join(self.profile_dir, 'iconleague.pcl')
 
-        # import web_pdb
-        # web_pdb.set_trace()
-
         self.load()
+
 
     @staticmethod
     def create_id(key):
@@ -191,6 +190,14 @@ class LiveSport(simpleplugin.Plugin):
 
     def selected_leagues(self):
         self._selected_leagues(self._leagues, _('Choosing a Sports Tournament'))
+
+    def _is_league(self, league, leagues):
+        if leagues.get(league, None) is not None:
+            if not leagues[league]:
+                return False
+        else:
+            self._add_league(league)
+        return True
 
     def selected_leagues_artwork(self):
         self._selected_leagues(self._leagues_artwork, _('Select leagues to create ArtWork...'))
@@ -540,7 +547,7 @@ class LiveSport(simpleplugin.Plugin):
         Возвращает текущее осведомленное(aware) время в UTC
         :return:
         """
-        return datetime.datetime.now(tz=UTC)
+        return datetime.datetime.now(tz=tzutc())
 
     @staticmethod
     def time_to_local(dt):
@@ -569,7 +576,7 @@ class LiveSport(simpleplugin.Plugin):
         """
         tz = tzoffset(None, int(self.get_setting('time_zone_site')) * 3600)
         dt = dt.replace(tzinfo=tz)
-        return dt.astimezone(UTC)
+        return dt.astimezone(tzutc())
 
     def _time_now_date(self, id):
         """
@@ -738,22 +745,10 @@ class LiveSport(simpleplugin.Plugin):
             return True
         return False
 
-    def create_listing_extra(self):
-        listing = [
-            {'label': '[UPPERCASE][B]{}[/B][/UPPERCASE]'.format(_('Leagues Choice...')),
-             'icon': os.path.join(self.dir('media'), 'select.png'), 'fanart': self.fanart,
-             'url': self.get_url(action='select_leagues')},
-            {'label': '[UPPERCASE][B]{}[/B][/UPPERCASE]'.format(_('Select leagues to create ArtWork...')),
-             'icon': os.path.join(self.dir('media'), 'selectart.png'), 'fanart': self.fanart,
-             'url': self.get_url(action='select_leagues_artwork')},
-            {'label': '[UPPERCASE][B]{}[/B][/UPPERCASE]'.format(_('Add-on settings...')),
-             'icon': os.path.join(self.dir('media'), 'extra.png'),
-             'fanart': self.fanart, 'url': self.get_url(action='settings')},
-            {'label': '[UPPERCASE][B]{}[/B][/UPPERCASE]'.format(_('Plugin data reset...')),
-             'icon': os.path.join(self.dir('media'), 'reset.png'),
-             'fanart': self.fanart, 'url': self.get_url(action='reset')}
-        ]
-        return listing
+class LiveSport(PluginSport):
+
+        # import web_pdb
+        # web_pdb.set_trace()
 
     def create_listing_categories(self):
         listing = [
@@ -809,13 +804,253 @@ class LiveSport(simpleplugin.Plugin):
         #                     #        xbmcplugin.SORT_METHOD_DATEADDED, xbmcplugin.SORT_METHOD_VIDEO_RATING),
         #                     cache_to_disk=False)
 
-    def _is_league(self, league, leagues):
-        if leagues.get(league, None) is not None:
-            if not leagues[league]:
-                return False
+    def create_listing_extra(self):
+        listing = [
+            {'label': '[UPPERCASE][B]{}[/B][/UPPERCASE]'.format(_('Leagues Choice...')),
+             'icon': os.path.join(self.dir('media'), 'select.png'), 'fanart': self.fanart,
+             'url': self.get_url(action='select_leagues')},
+            {'label': '[UPPERCASE][B]{}[/B][/UPPERCASE]'.format(_('Select leagues to create ArtWork...')),
+             'icon': os.path.join(self.dir('media'), 'selectart.png'), 'fanart': self.fanart,
+             'url': self.get_url(action='select_leagues_artwork')},
+            {'label': '[UPPERCASE][B]{}[/B][/UPPERCASE]'.format(_('Add-on settings...')),
+             'icon': os.path.join(self.dir('media'), 'extra.png'),
+             'fanart': self.fanart, 'url': self.get_url(action='settings')},
+            {'label': '[UPPERCASE][B]{}[/B][/UPPERCASE]'.format(_('Plugin data reset...')),
+             'icon': os.path.join(self.dir('media'), 'reset.png'),
+             'fanart': self.fanart, 'url': self.get_url(action='reset')}
+        ]
+        return listing
+
+
+
+
+    def _resolve_direct_link(self, href):
+        try:
+            html = self.get_http(href).content
+
+            soup = bs4.BeautifulSoup(html, 'html.parser')
+            tag_iframe = soup.find('iframe')
+            src_html = self.get_http(tag_iframe['src']).content
+        except Exception as e:
+            # xbmcgui.Dialog().notification(self.name, str(e), self.icon, 2000)
+            self.logd('ERROR RESOLVE HREF ({})'.format(href), str(e))
+            return ''
+        if src_html is None:
+            return ''
+        ilink = src_html.find(b'var videoLink')
+        if ilink != -1:
+            i1 = src_html.find(b'\'', ilink)
+            i2 = src_html.find(b'\'', i1 + 1)
+            return src_html[i1 + 1:i2]
         else:
-            self._add_league(league)
-        return True
+            return ''
+
+
+    def _get_match_center_mini(self):
+        try:
+            center = self.get_http(
+                'https://moon.livesport.ws/engine/modules/sports/sport_template_loader.php?'
+                'from=showfull&template=match/main_match_center_mini_refresher').content
+        except Exception as e:
+            self.logd('ERROR GET MATCH CENTER MINI', str(e))
+            return None
+
+        center = center.decode('unicode-escape')
+        center = center[center.find('{'):]
+
+        if center:
+            center = json.loads(center)
+        else:
+            return None
+        return center
+
+    def _get_mini_info_math(self, id_event, center=None):
+        if center is not None:
+            for info in center['match_center_mini']:
+                if info['event'] == str(id_event):
+                    return info
+        else:
+            center = self._get_match_center_mini()
+            return self._get_mini_info_math(id_event, center)
+        return None
+
+    def create_listing_filter(self, params):
+        l = []
+        if params['sort'] != 'offline':
+            l.append({'label': '[UPPERCASE][B][COLOR FF0084FF][{}][/COLOR][/UPPERCASE][/B]'.format(_('Refresh')),
+                      'url': self.get_url(action='listing', sort=params['sort']),
+                      'poster': os.path.join(self.dir('media'), 'refresh.png'),
+                      'art': {
+                          'thumb': os.path.join(self.dir('media'), 'refresh.png'),
+                          'poster': os.path.join(self.dir('media'), 'refresh.png'),
+                          'fanart': self.fanart,
+                          'icon': os.path.join(self.dir('media'), 'refresh.png'),
+                      },
+                      'info': {
+                          'video': {
+                              'plot': _('Updating Lists'),
+                          }
+                      },
+                      })
+        # return l + self._get_listing(params=params)
+        return self.create_listing(l + self._get_listing(params=params),
+                                   content='movies',
+                                   cache_to_disk=False)
+
+    def get_labels_live(self):
+
+        if not self.get_setting('is_live_fullscreenvideo'):
+            return []
+
+        labels = [u'[UPPERCASE][COLOR FF0084FF][B]{}:[/B][/COLOR][/UPPERCASE]'.format(_('Live'))]
+
+        center = self._get_match_center_mini()
+
+        try:
+            for item in list(self._listing.values()):
+
+                info_match = self._get_mini_info_math(item['id_event'], center)
+
+                if not info_match:
+                    self.logd('_get_listing() if not info_match', item['label'])
+                    continue
+
+                if info_match['status'] != u'LIVE':
+                    continue
+
+                labels.append(
+                    u'[B]{} - {}[/B]  {}'.format(info_match['scorel'], info_match['scorer'], item['label'])
+                )
+
+        except Exception as e:
+            self.logd('._get_labels_live() ERROR', str(e))
+
+        return labels
+
+    # def get_labels_live(self):
+    #
+    #     labels = [u'[UPPERCASE][COLOR FF0084FF][B]{}:[/B][/COLOR][/UPPERCASE]'.format(_('Live'))]
+    #
+    #     try:
+    #         for item in list(self._listing.values()):
+    #
+    #             is_live = False
+    #
+    #             scorel = ''
+    #             scorer = ''
+    #
+    #             url_links = item.get('url_links', None)
+    #             if url_links is not None:
+    #                 data = self.get_http(url_links).json()
+    #                 if data.get('broadcast_status', None) == 1:
+    #                     events = data.get('events', None)
+    #                     if events is not None:
+    #                         if events[2] != _('Completed'):
+    #                             scorel = events[0]
+    #                             scorer = events[1]
+    #                             is_live = True
+    #
+    #             if is_live:
+    #                 labels.append(u'[B]{} - {}[/B]  {}'.format(scorel, scorer, item['label']))
+    #
+    #     except Exception as e:
+    #         self.logd('._get_labels_live() ERROR', str(e))
+    #
+    #     return labels
+
+    def get_labels_status_match(self, id_):
+
+        labels = []
+
+        links = self.links(id_)
+
+        # info_mini = self._get_mini_info_math(self.get(id_, 'id_event'))
+
+        labels.append(u'{}       {}'.format(self.time_to_local(self.get(id_, 'date')).strftime('%d.%m %H:%M'),
+                                            self.get(id_, 'league')))
+
+        # labels.append(u'[B]{}    {} : {}    {} [/B]'.format(self.get(id_, 'home'), info_mini['scorel'],
+        #                                                     info_mini['scorer'], self.get(id_, 'guest')))
+
+        data = links[0]['data']
+
+        scorel = '' if data['events'] is None else data['events'][0]
+        scorer = '' if data['events'] is None else data['events'][1]
+
+        labels.append(u'[B]{}    {} : {}    {} [/B]'.format(self.get(id_, 'home'), scorel,
+                                                            scorer, self.get(id_, 'guest')))
+
+        label_broadcast = '[COLOR FF0084FF][B]{}[/B][/COLOR]'.format(_('BROADCASTS:'))
+        label_reviews = '[COLOR FF0084FF][B]{}[/B][/COLOR]'.format(_('REVIEWS:'))
+        label_statistic = '[COLOR FF0084FF][B]{}[/B][/COLOR]'.format(_('STATISTICS:'))
+
+        is_reviews = self.get_setting('is_reviews_fullscreenvideo')
+        is_statistics = self.get_setting('is_statistic_fullscreenvideo')
+        is_append = True
+
+        for link in links:
+            if link.get('status', '') != 'broadcast' \
+                    and link.get('status', '') != 'data' \
+                    and link['label'] != label_broadcast:
+                if link['label'] == label_reviews and not is_reviews:
+                    is_append = False
+                if link['label'] == label_statistic:
+                    if not is_statistics:
+                        is_append = False
+                    else:
+                        is_append = True
+
+                if is_append:
+                    labels.append(link['label'])
+
+        return labels
+
+    # @staticmethod
+    # def remove_square_brackets(txt):
+    #     return re.sub('[\[].*?[\]]', '', txt)
+
+    # @staticmethod
+    # def format_str_column_width_new(label, column_width):
+    #     #txt = txt.strip()
+    #     #print('txt - {}'.format(str(txt)))
+    #     len_label = len(label)
+    #     label_real = LiveSport.remove_square_brackets(label)
+    #     len_label_real = len(label_real)
+    #
+    #     label_utf8 = label.encode('utf-8')
+    #     len_label_utf8 = len(label_utf8)
+    #     label_real_utf8 = label_real.encode('utf-8')
+    #     len_label_real_utf8 = len(label_real_utf8)
+    #
+    #     #print('len_service - {}'.format(len_service))
+    #
+    #     # print('real txt - {}'.format(LiveSport.remove_square_brackets(txt)))
+    #     # print('len_real - {}'.format(len(LiveSport.remove_square_brackets(txt))))
+    #     # print('column_width - {}'.format(column_width))
+    #     # print('len_service - len_real - {}'.format(len_service - len_real))
+    #     # print('column_width - (len_service - len_real) - {}'.format(column_width - (len_service - len_real)))
+    #     #result = '{1:{0:}s}  |'.format(column_width + (len_service - len_real), txt)
+    #     result = '{}{}|'.format(label, ' '.join('*' for a in range(column_width - (len_label - len_real))))
+    #     return result
+    #
+    # def create_labels(self, id_):
+    #     row = 20
+    #     live = self.get_labels_live()
+    #     status = self.get_labels_status_match(id_)
+    #     # probel = ['', '', '', '']
+    #     # status = status + probel
+    #     sl = status + live
+    #     labels = []
+    #     if len(sl) > row:
+    #         for i, v in enumerate(sl):
+    #             if i == row:
+    #                 break
+    #             if (i + row) < len(sl):
+    #                 labels.append('{}{}'.format(self.format_str_column_width_new(sl[i], 60),  sl[i + row]))
+    #             else:
+    #                 labels.append('{}'.format(self.format_str_column_width_new(sl[i], 60)))
+    #         return labels
+    #     return sl
 
     def _parse_listing(self, html, progress=None):
         """
@@ -1016,27 +1251,6 @@ class LiveSport(simpleplugin.Plugin):
                 progress.update(fill, message=game)
 
         return listing
-
-    def _resolve_direct_link(self, href):
-        try:
-            html = self.get_http(href).content
-
-            soup = bs4.BeautifulSoup(html, 'html.parser')
-            tag_iframe = soup.find('iframe')
-            src_html = self.get_http(tag_iframe['src']).content
-        except Exception as e:
-            # xbmcgui.Dialog().notification(self.name, str(e), self.icon, 2000)
-            self.logd('ERROR RESOLVE HREF ({})'.format(href), str(e))
-            return ''
-        if src_html is None:
-            return ''
-        ilink = src_html.find(b'var videoLink')
-        if ilink != -1:
-            i1 = src_html.find(b'\'', ilink)
-            i2 = src_html.find(b'\'', i1 + 1)
-            return src_html[i1 + 1:i2]
-        else:
-            return ''
 
     def _parse_links(self, id_, html):
         """
@@ -1312,212 +1526,6 @@ class LiveSport(simpleplugin.Plugin):
                       'is_playable': True})
 
         return l
-
-    def _get_match_center_mini(self):
-        try:
-            center = self.get_http(
-                'https://moon.livesport.ws/engine/modules/sports/sport_template_loader.php?'
-                'from=showfull&template=match/main_match_center_mini_refresher').content
-        except Exception as e:
-            self.logd('ERROR GET MATCH CENTER MINI', str(e))
-            return None
-
-        center = center.decode('unicode-escape')
-        center = center[center.find('{'):]
-
-        if center:
-            center = json.loads(center)
-        else:
-            return None
-        return center
-
-    def _get_mini_info_math(self, id_event, center=None):
-        if center is not None:
-            for info in center['match_center_mini']:
-                if info['event'] == str(id_event):
-                    return info
-        else:
-            center = self._get_match_center_mini()
-            return self._get_mini_info_math(id_event, center)
-        return None
-
-    def create_listing_filter(self, params):
-        l = []
-        if params['sort'] != 'offline':
-            l.append({'label': '[UPPERCASE][B][COLOR FF0084FF][{}][/COLOR][/UPPERCASE][/B]'.format(_('Refresh')),
-                      'url': self.get_url(action='listing', sort=params['sort']),
-                      'poster': os.path.join(self.dir('media'), 'refresh.png'),
-                      'art': {
-                          'thumb': os.path.join(self.dir('media'), 'refresh.png'),
-                          'poster': os.path.join(self.dir('media'), 'refresh.png'),
-                          'fanart': self.fanart,
-                          'icon': os.path.join(self.dir('media'), 'refresh.png'),
-                      },
-                      'info': {
-                          'video': {
-                              'plot': _('Updating Lists'),
-                          }
-                      },
-                      })
-        # return l + self._get_listing(params=params)
-        return self.create_listing(l + self._get_listing(params=params),
-                                   content='movies',
-                                   cache_to_disk=False)
-
-    def get_labels_live(self):
-
-        if not self.get_setting('is_live_fullscreenvideo'):
-            return []
-
-        labels = [u'[UPPERCASE][COLOR FF0084FF][B]{}:[/B][/COLOR][/UPPERCASE]'.format(_('Live'))]
-
-        center = self._get_match_center_mini()
-
-        try:
-            for item in list(self._listing.values()):
-
-                info_match = self._get_mini_info_math(item['id_event'], center)
-
-                if not info_match:
-                    self.logd('_get_listing() if not info_match', item['label'])
-                    continue
-
-                if info_match['status'] != u'LIVE':
-                    continue
-
-                labels.append(
-                    u'[B]{} - {}[/B]  {}'.format(info_match['scorel'], info_match['scorer'], item['label'])
-                )
-
-        except Exception as e:
-            self.logd('._get_labels_live() ERROR', str(e))
-
-        return labels
-
-    # def get_labels_live(self):
-    #
-    #     labels = [u'[UPPERCASE][COLOR FF0084FF][B]{}:[/B][/COLOR][/UPPERCASE]'.format(_('Live'))]
-    #
-    #     try:
-    #         for item in list(self._listing.values()):
-    #
-    #             is_live = False
-    #
-    #             scorel = ''
-    #             scorer = ''
-    #
-    #             url_links = item.get('url_links', None)
-    #             if url_links is not None:
-    #                 data = self.get_http(url_links).json()
-    #                 if data.get('broadcast_status', None) == 1:
-    #                     events = data.get('events', None)
-    #                     if events is not None:
-    #                         if events[2] != _('Completed'):
-    #                             scorel = events[0]
-    #                             scorer = events[1]
-    #                             is_live = True
-    #
-    #             if is_live:
-    #                 labels.append(u'[B]{} - {}[/B]  {}'.format(scorel, scorer, item['label']))
-    #
-    #     except Exception as e:
-    #         self.logd('._get_labels_live() ERROR', str(e))
-    #
-    #     return labels
-
-    def get_labels_status_match(self, id_):
-
-        labels = []
-
-        links = self.links(id_)
-
-        # info_mini = self._get_mini_info_math(self.get(id_, 'id_event'))
-
-        labels.append(u'{}       {}'.format(self.time_to_local(self.get(id_, 'date')).strftime('%d.%m %H:%M'),
-                                            self.get(id_, 'league')))
-
-        # labels.append(u'[B]{}    {} : {}    {} [/B]'.format(self.get(id_, 'home'), info_mini['scorel'],
-        #                                                     info_mini['scorer'], self.get(id_, 'guest')))
-
-        data = links[0]['data']
-
-        scorel = '' if data['events'] is None else data['events'][0]
-        scorer = '' if data['events'] is None else data['events'][1]
-
-        labels.append(u'[B]{}    {} : {}    {} [/B]'.format(self.get(id_, 'home'), scorel,
-                                                            scorer, self.get(id_, 'guest')))
-
-        label_broadcast = '[COLOR FF0084FF][B]{}[/B][/COLOR]'.format(_('BROADCASTS:'))
-        label_reviews = '[COLOR FF0084FF][B]{}[/B][/COLOR]'.format(_('REVIEWS:'))
-        label_statistic = '[COLOR FF0084FF][B]{}[/B][/COLOR]'.format(_('STATISTICS:'))
-
-        is_reviews = self.get_setting('is_reviews_fullscreenvideo')
-        is_statistics = self.get_setting('is_statistic_fullscreenvideo')
-        is_append = True
-
-        for link in links:
-            if link.get('status', '') != 'broadcast' \
-                    and link.get('status', '') != 'data' \
-                    and link['label'] != label_broadcast:
-                if link['label'] == label_reviews and not is_reviews:
-                    is_append = False
-                if link['label'] == label_statistic:
-                    if not is_statistics:
-                        is_append = False
-                    else:
-                        is_append = True
-
-                if is_append:
-                    labels.append(link['label'])
-
-        return labels
-
-    # @staticmethod
-    # def remove_square_brackets(txt):
-    #     return re.sub('[\[].*?[\]]', '', txt)
-
-    # @staticmethod
-    # def format_str_column_width_new(label, column_width):
-    #     #txt = txt.strip()
-    #     #print('txt - {}'.format(str(txt)))
-    #     len_label = len(label)
-    #     label_real = LiveSport.remove_square_brackets(label)
-    #     len_label_real = len(label_real)
-    #
-    #     label_utf8 = label.encode('utf-8')
-    #     len_label_utf8 = len(label_utf8)
-    #     label_real_utf8 = label_real.encode('utf-8')
-    #     len_label_real_utf8 = len(label_real_utf8)
-    #
-    #     #print('len_service - {}'.format(len_service))
-    #
-    #     # print('real txt - {}'.format(LiveSport.remove_square_brackets(txt)))
-    #     # print('len_real - {}'.format(len(LiveSport.remove_square_brackets(txt))))
-    #     # print('column_width - {}'.format(column_width))
-    #     # print('len_service - len_real - {}'.format(len_service - len_real))
-    #     # print('column_width - (len_service - len_real) - {}'.format(column_width - (len_service - len_real)))
-    #     #result = '{1:{0:}s}  |'.format(column_width + (len_service - len_real), txt)
-    #     result = '{}{}|'.format(label, ' '.join('*' for a in range(column_width - (len_label - len_real))))
-    #     return result
-    #
-    # def create_labels(self, id_):
-    #     row = 20
-    #     live = self.get_labels_live()
-    #     status = self.get_labels_status_match(id_)
-    #     # probel = ['', '', '', '']
-    #     # status = status + probel
-    #     sl = status + live
-    #     labels = []
-    #     if len(sl) > row:
-    #         for i, v in enumerate(sl):
-    #             if i == row:
-    #                 break
-    #             if (i + row) < len(sl):
-    #                 labels.append('{}{}'.format(self.format_str_column_width_new(sl[i], 60),  sl[i + row]))
-    #             else:
-    #                 labels.append('{}'.format(self.format_str_column_width_new(sl[i], 60)))
-    #         return labels
-    #     return sl
 
     def _get_listing(self, params=None):
         """

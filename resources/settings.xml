@@ -13,12 +13,6 @@
 		<setting id="delta_links" type="number" label="10010" default="5" visible="true"/>
 <!--		<setting id="reset" type="action" label="30024" action="RunPlugin(plugin://plugin.video.livesport?action=reset)" />-->
 	</category>
-	<category label="ArtWork">
-		<setting id="theme_artwork" label="10013" type="enum"  lvalues="10017|10018|10019|10020"/>
-		<setting id="is_thumb" type="bool" label="10002" default="false" visible="true"/>
-		<setting id="is_poster" type="bool" label="10015" default="false" visible="true"/>
-		<setting id="is_fanart" type="bool" label="10016" default="false" visible="true"/>
-	</category>
 	<category label="AceStream"> 
 		<setting id="is_default_ace" type="bool" label="10008" default="false"/>
 		<setting label="10009" visible="eq(-1,true)" type="enum" id="default_ace" values="Ace Stream Engine #1|Ace Stream Engine #2|HTTPAceProxy|TAM|Plexus" default="Ace Stream Engine #1" />
@@ -44,9 +38,11 @@
 
 		<setting type="lsep" label='10005'/>
 		<setting id="date_update_service" type="text" label="date_update_service" default="" visible="false"/>
-
-
-
-
+	</category>
+	<category label="ArtWork (experiment)">
+		<setting id="theme_artwork" label="10013" type="enum"  lvalues="10017|10018|10019|10020"/>
+		<setting id="is_thumb" type="bool" label="10002" default="false" visible="true"/>
+		<setting id="is_poster" type="bool" label="10015" default="false" visible="true"/>
+		<setting id="is_fanart" type="bool" label="10016" default="false" visible="true"/>
 	</category>
 </settings>
