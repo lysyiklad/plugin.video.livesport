@@ -9,14 +9,16 @@ standard_library.install_aliases()
 from builtins import str
 from builtins import object
 import os
-#import urllib.request, urllib.error, urllib.parse
 import requests
 import io
+import json
+import copy
 from PIL import Image, ImageDraw, ImageFont
-import datetime
-from collections import namedtuple
 
-# locale.setlocale(locale.LC_ALL, '')
+# import xbmcaddon
+# __addon__ = xbmcaddon.Addon()
+# FOLDER_FONT = os.path.join(__addon__.getAddonInfo('path'), 'resources', 'data', 'font')
+# LAYOUT_JSON = os.path.join(__addon__.getAddonInfo('path'), 'resources', 'data', 'layout.json')
 
 MAX_LENGTH_TEXT = 370
 
@@ -26,34 +28,8 @@ WEEKDAY = [u"Понедельник", u"Вторник", u"Среда",
 MONTHS = [u"января", u"февраля", u"марта", u"апреля", u"мая", u"июня", u"июля", u"августа",
           u"сентября", u"октября", u"ноября", u"декабря"]
 
-SPECIFIC_ARTWORK_DATA = namedtuple('SPECIFIC_ARTWORK_DATA', [
-    'league',
-    'com_home',
-    'vs',
-    'com_guest',
-    'weekday',
-    'month',
-    'time',
-    'size',
-    'pos_home',
-    'pos_guest',
-    'size_font_league',
-    'size_font_command',
-    'size_font_time',
-    'size_font_weekday',
-])
 
-ARTWORK_DATA = {
-    'poster': SPECIFIC_ARTWORK_DATA(25, 300, 365, 410, 530, 575, 645, (150, 150), (50, 100), (270, 100), 40, 55, 60,
-                                    35),
-    'thumb': SPECIFIC_ARTWORK_DATA(10, 220, None, 280, 335, 380, 420, (120, 120), (70, 80), (290, 80), 25, 40, 55, 35),
-    'fanart': SPECIFIC_ARTWORK_DATA(None, None, None, None, None, None, None, (400, 400), (190, 150), (690, 150), 0, 0,
-                                    0, 0),
-    # 'fanart': SPECIFIC_ARTWORK_DATA(None, None, None, None, None, None, None, (250, 250), (100, 100), (460, 100), 0, 0, 0, 0),
-}
-
-
-def _cuttext(text, font, maxlength_text=MAX_LENGTH_TEXT):
+def cuttext(text, font, maxlength_text=MAX_LENGTH_TEXT):
     w, h = font.getsize(text)
     if w > maxlength_text:
         for i, ch in enumerate(text):
@@ -65,166 +41,168 @@ def _cuttext(text, font, maxlength_text=MAX_LENGTH_TEXT):
     return text
 
 
-def _get_indent_left_for_center(text, width_frame, font):
+def get_indent_left_for_center(text, width_frame, font):
     w, h = font.getsize(text)
     return int((width_frame - w) / 2)
 
 
-def _get_http_content(url):
+def draw_text(draw, text, font, x, y, color=(255, 255, 255)):
+    width_bkg = draw.im.size[0]
+    text = cuttext(text, font)
+    if x is None:
+        draw.text((get_indent_left_for_center(text, width_bkg, font), y), text, color, font=font)
+    else:
+        draw.text((x, y), text, color, font=font)
+
+
+def get_http_content(url):
     headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; Trident/7.0; rv:11.0) like Gecko'}
     return requests.get(url, headers=headers).content
 
 
-class ArtWorkFootBall(object):
+def load_logo(value):
+    try:
+        if os.path.exists(value):
+            logo = Image.open(value)
+        else:
+            logo = Image.open(io.BytesIO(get_http_content(value)))
+    except Exception as e:
+        logo = Image.open('ace.png')
+    logo = logo.convert("RGBA")
+    return logo
 
-    def __init__(self, plugin, **kwargs):
-        self._plugin = plugin
-        self._data = kwargs
-        self.color_font = (0, 0, 0)
-        # dark light transparent
-        self._theme = 'light'
-        self.language = 'English'  # Russian English
+
+def paste_logo(img, logo, size, pos):
+    logo = logo.resize(tuple(size), Image.ANTIALIAS)
+    img.paste(logo, tuple(pos), logo)
+
+
+def weekday(date, language):
+    if language == 'Russian':
+        return WEEKDAY[date.weekday()]
+    else:
+        return date.strftime('%A')
+
+
+def month(date, language):
+    if language == 'Russian':
+        return u'%s %s %s' % (date.day, MONTHS[date.month - 1], date.year)
+    else:
+        return date.strftime('%H %B %Y')
+
+
+def time(date):
+    return date.strftime("%H:%M")
+
+
+class ArtWork(object):
+    LAYOUT_ARTWORK = None
+
+    def __init__(self, folder_font, layout_json, data_, log=None):
+        assert os.path.exists(layout_json)
+        self._folder_font = folder_font
+        if ArtWork.LAYOUT_ARTWORK is None:
+            with open(layout_json, "r") as f:
+                ArtWork.LAYOUT_ARTWORK = json.load(f)
+
+        assert ArtWork.LAYOUT_ARTWORK
+
+        self._data = data_
+        self._layout = copy.deepcopy(ArtWork.LAYOUT_ARTWORK)
+        self._images = {}
+        self._log = log
 
     def log(self, msg):
-        if self._plugin is not None:
-            self._plugin.logd('ArtWorkFootBall', msg)
+        if self._log is not None:
+            self._log('<ArtWork>  {}'.format(msg))
 
-    @property
-    def plugin(self):
-        return self._plugin
+    def get_background_type(self, type):
+        return self._layout[type]['background']
 
-    @property
-    def league(self):
-        return self._data['league']
+    def set_background_type(self, type, data):
+        self._layout[type]['background'] = data
 
-    @property
-    def weekday(self):
-        if self.language == 'Russian':
-            return WEEKDAY[self._data['date'].weekday()]
-        else:
-            return self._data['date'].strftime('%A')
+    def set_color_font_type(self, type, data):
+        self._layout[type]['color_font'] = data
 
-    @property
-    def month(self):
-        if self.language == 'Russian':
-            return u'%s %s %s' % (self._data['date'].day, MONTHS[self._data['date'].month - 1], self._data['date'].year)
-        else:
-            return self._data['date'].strftime('%H %B %Y')
+    def set_size(self, type, data):
+        self._layout[type]['size'] = data
 
-    @property
-    def time(self):
-        return self._data['date'].strftime("%H:%M")
+    def set_background(self, data):
+        for key, value in self._layout.items():
+            value['background'] = data
 
-    @property
-    def vs(self):
-        return 'vs'
+    def set_color_font(self, data):
+        for key, value in self._layout.items():
+            value['color_font'] = data
 
-    @property
-    def logo_home(self):
-        return self._data['logo_home']
+    def get_value(self, type, key):
+        return [a for a in self._layout[type]['data'] if a['key'] == key][0]
 
-    @property
-    def logo_guest(self):
-        return self._data['logo_guest']
+    def get_data(self, type, key, value):
+        return self.get_value(type, key)[value]
 
-    def file(self, type):
-        return os.path.join(self.plugin.dir('thumb'), '%s_%s_%s.png' % (type, self._theme, str(self._data['id'])))
+    def set_data(self, type, key, value, data):
+        self.get_value(type, key)[value] = data
 
-    def font(self, file, size):
-        return ImageFont.truetype(os.path.join(self.plugin.dir('font'), file), size)
+    def make_file(self, file, type):
 
-    @property
-    def theme(self):
-        return self._theme
-
-    def _draw_text(self, draw, text, font, padding_top):
-        if padding_top is None:
-            return
-        width_bkg = draw.im.size[0]
-        text = _cuttext(text, font)
-        draw.text((_get_indent_left_for_center(text, width_bkg, font),
-                   padding_top), text, self.color_font, font=font)
-
-    def _paste_logo(self, type, ifon):
-        try:
-            ihome = Image.open(io.BytesIO(_get_http_content(self.logo_home)))
-            iguest = Image.open(io.BytesIO(_get_http_content(self.logo_guest)))
-        except Exception as e:
-            self.log('ERROR PASTE LOGO [%s] - %s - %s' %
-                     (e, self.logo_home, self.logo_guest))
-            ihome = Image.open(self.plugin.icon)
-            iguest = Image.open(self.plugin.icon)
-            # ic2.thumbnail(ARTWORK_DATA[type]['size_thumbguest'], Image.ANTIALIAS)
-        ihome = ihome.convert("RGBA")
-        iguest = iguest.convert("RGBA")
-        art = ARTWORK_DATA[type]
-        ihome = ihome.resize(art.size, Image.ANTIALIAS)
-        iguest = iguest.resize(art.size, Image.ANTIALIAS)
-        ifon.paste(ihome, art.pos_home, ihome)
-        ifon.paste(iguest, art.pos_guest, iguest)
-
-    def _create_art(self, type_, background=None):
-
-        file = self.file(type_)
         if os.path.exists(file):
-            self.log('exists -%s' % file)
+            self.log('exists - {}'.format(file))
             return file
+
+        artwork = self._layout[type]
+
+        self.log(artwork)
+        self.log('make_file 1')
+
         try:
-            # import web_pdb
-            # web_pdb.set_trace()
+            background = artwork['background']
+            self.log('make_file background {}'.format(background))
+            if background not in self._images:
+                img = Image.open(background)
+                self._images[background] = img
+            else:
+                img = self._images[background]
+            img = Image.open(background)
+            if artwork['size'] is not None:
+                img = img.resize(tuple(artwork['size']), Image.ANTIALIAS)
+            self.log('make_file img {}'.format(img))
+        except:
+            img = Image.new('RGBA', tuple(artwork['size']), color='black')
+            self.log('make_file except img {}'.format(img))
 
-            art = ARTWORK_DATA[type_]
+        draw = ImageDraw.Draw(img)
 
-            if background is None:
-                background = os.path.join(self.plugin.dir('media'), '%s_%s.png' % (self.theme, type_))
+        self.log('make_file draw - {}'.format(draw))
 
-            ifon = Image.open(background)
-            ifon = ifon.convert("RGBA")
-            draw = ImageDraw.Draw(ifon)
+        for art in artwork['data']:
+            if art['key'] not in self._data and 'data' not in art:
+                continue
+            if art.get('data', None) is not None:
+                value = art['data']
+            else:
+                value = self._data[art['key']]
+            if art['type'] == 'text':
+                self.log('make_file text - {}'.format(value))
+                font = ImageFont.truetype(os.path.join(self._folder_font, art['font']), art['size'])
+                self.log('make_file text - {}'.format(font))
+                color = tuple(art['color'] if art['color'] is not None else artwork['color_font'])
+                self.log('make_file text - {}'.format(color))
+                draw_text(draw, value, font, art['x'], art['y'], color)
+            elif art['type'] == 'picture':
+                self.log('make_file picture - {}'.format(value))
+                if value not in self._images:
+                    logo = load_logo(value)
+                    self._images[value] = logo
+                else:
+                    logo = self._images[value]
+                self.log('make_file picture - {}'.format(logo))
+                self.log('make_file picture - {}'.format(art['size']))
+                self.log('make_file picture - {}'.format(art['pos']))
+                paste_logo(img, logo, art['size'], art['pos'])
+            else:
+                continue
 
-            self._draw_text(draw, self.league, self.font('ubuntu_condensed', art.size_font_league), art.league)
-            self._draw_text(draw, self._data['home'], self.font('bandera_pro', art.size_font_command), art.com_home)
-            self._draw_text(draw, self.vs, self.font('ubuntu', art.size_font_weekday), art.vs)
-            self._draw_text(draw, self._data['guest'], self.font('bandera_pro', art.size_font_command), art.com_guest)
-            self._draw_text(draw, self.weekday, self.font('ubuntu', art.size_font_weekday), art.weekday)
-            self._draw_text(draw, self.month, self.font('ubuntu', art.size_font_weekday), art.month)
-            self._draw_text(draw, self.time, self.font('bandera_pro', art.size_font_time), art.time)
-
-            self._paste_logo(type_, ifon)
-
-            ifon.save(file)
-            return file
-        except Exception as e:
-            self.log('ERROR CREATE ART [%s] - %s' % (e, file))
-            return ''
-
-    def create_poster(self, background=None):
-        return self._create_art('poster', background)
-
-    def create_thumb(self, background=None):
-        return self._create_art('thumb', background)
-
-    def create_fanart(self, background=None):
-        if background is not None:
-            theme = self._theme
-            self._theme = ''
-        fanart = self._create_art('fanart', background)
-        if background is not None:
-            self._theme = theme
-        return fanart
-
-    def set_dark_theme(self):
-        self._theme = 'dark'
-        self.color_font = (255, 255, 255)
-
-    def set_light_theme(self):
-        self._theme = 'light'
-        self.color_font = (0, 0, 0)
-
-    def set_transparent_theme(self):
-        self._theme = 'transparent'
-        self.color_font = (255, 255, 255)
-
-    def set_blue_theme(self):
-        self._theme = 'blue'
-        self.color_font = (255, 255, 255)
+        img.save(file)
+        return file

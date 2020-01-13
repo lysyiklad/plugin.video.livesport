@@ -9,11 +9,11 @@ from future import standard_library
 standard_library.install_aliases()
 import requests
 import pickle
-import re
+# import re
 from . import simpleplugin, makeart
 import xbmcgui
 import xbmc
-import xbmcplugin
+# import xbmcplugin
 from dateutil.tz import tzutc, tzlocal, tzoffset
 from dateutil.parser import *
 import dateutil
@@ -50,6 +50,7 @@ class PluginSport(simpleplugin.Plugin):
         super(PluginSport, self).__init__()
         global _
         self._dir = {'media': os.path.join(self.path, 'resources', 'media'),
+                     'data': os.path.join(self.path, 'resources', 'data'),
                      'font': os.path.join(self.path, 'resources', 'data', 'font'),
                      'lib': os.path.join(self.path, 'resources', 'lib'),
                      'thumb': os.path.join(self.profile_dir, 'thumb')}
@@ -79,7 +80,6 @@ class PluginSport(simpleplugin.Plugin):
         self._icons_league_pcl = os.path.join(self.profile_dir, 'iconleague.pcl')
 
         self.load()
-
 
     @staticmethod
     def create_id(key):
@@ -125,15 +125,17 @@ class PluginSport(simpleplugin.Plugin):
     def dir(self, dir_):
         return self._dir[dir_]
 
-    def get(self, id_, key):
+    def get_item(self, id_):
         item = self._listing.get(id_, None)
         if item is None:
             self.update()
             item = self._listing.get(id_, None)
             if item is None:
                 return None
+        return item
 
-        return item.get(key, None)
+    def get(self, id_, key):
+        return self.get_item(id_).get(key, None)
 
     def load(self):
         try:
@@ -240,7 +242,7 @@ class PluginSport(simpleplugin.Plugin):
         :return:
         """
         id_ = int(params.id)
-        links = self.links(id_, isdump=True)
+        links = self.links(id_, isdump=False)
         self.logd('links', links)
 
         return self._get_links(id_, links)
@@ -252,31 +254,21 @@ class PluginSport(simpleplugin.Plugin):
         :return:
         """
         links = self.get(id_, 'href')
-        tnd = self._time_now_date(id_)
-        tsn = self._time_scan_now()
-        dt = self.get_setting('delta_links')
+        item = self.get_item(id_)
+        self.logd('links', 'item %s' % item)
+        self.logd('links', 'date_links %s' % item['date_links'])
+        scan_now = None
+        if links:
+            scan_now = int((self.time_now_utc() - item['date_links']).total_seconds() / 60)
 
-        self.logd('links links', links)
-        self.logd('links self.date_scan', self.date_scan)
+        self.logd('links', 'id %s' % id_)
+        self.logd('links', links)
+        self.logd('links', 'scan_now %s' % scan_now)
 
-        links = self.get(id_, 'href')
+        if scan_now is None or self.get_setting('delta_links') < scan_now:
 
-        self.logd('links links', links)
-
-        status = self.get(id_, 'status')
-
-        if links and status == 'OFFLINE':
-            self.logd('links', 'id - %s  status - %s ' % (id_, status))
-            return links
-        if not links or not self.date_scan or tsn > self.get_setting('delta_scan') or tsn > dt:  # and tnd < dt):
-            self.logd('links - id - %s : time now date - %s time scan now - %s' %
-                      (id_, tnd, tsn), links)
             try:
                 html = self.get_http(self.get(id_, 'url_links')).content
-                # file_html = os.path.join(self.path, 'links.html')
-                # if not os.path.exists(file_html):
-                #     with open(file_html, 'wb') as f:
-                #         f.write(html)
             except Exception as e:
                 xbmcgui.Dialog().notification(self.name, str(e), self.icon, 2000)
                 self.logd('ERROR LINKS', str(e))
@@ -286,8 +278,16 @@ class PluginSport(simpleplugin.Plugin):
                     return links
             del links[:]
             links.extend(self._parse_links(id_, html))
-            # if links and status == 'OFFLINE':
-            #     self.dump()
+
+            if links:
+                item['date_links'] = self.time_now_utc()
+            else:
+                item['date_links'] = None
+            self.logd('links', 'date_links %s' % item['date_links'])
+            # if isdump and links and status == 'OFFLINE':
+            #     # self.dump()
+            #     with self.get_storage() as storage:
+            #         storage['listing'] = self._listing
 
         self.logd('self.get(%s, href)' % id_, self.get(id_, 'href'))
 
@@ -298,7 +298,6 @@ class PluginSport(simpleplugin.Plugin):
         Обновление списков для виртуальных папок, рисунков, удаление мусора, сохранение в pickle
         :return:
         """
-
 
         self.load()
 
@@ -745,10 +744,11 @@ class PluginSport(simpleplugin.Plugin):
             return True
         return False
 
+
 class LiveSport(PluginSport):
 
-        # import web_pdb
-        # web_pdb.set_trace()
+    # import web_pdb
+    # web_pdb.set_trace()
 
     def create_listing_categories(self):
         listing = [
@@ -821,9 +821,6 @@ class LiveSport(PluginSport):
         ]
         return listing
 
-
-
-
     def _resolve_direct_link(self, href):
         try:
             html = self.get_http(href).content
@@ -844,7 +841,6 @@ class LiveSport(PluginSport):
             return src_html[i1 + 1:i2]
         else:
             return ''
-
 
     def _get_match_center_mini(self):
         try:
@@ -1176,50 +1172,61 @@ class LiveSport(PluginSport):
             fanart = os.path.join(self.dir('media'), 'fanart_{}.jpg'.format(sport))
 
             if self.is_create_artwork() and self._is_league(league, self._leagues_artwork):
-                art = makeart.ArtWorkFootBall(self,
-                                              id=id_,
-                                              date=self.time_to_local(date_utc),
-                                              league=league,
-                                              home=home,
-                                              guest=guest,
-                                              logo_home=icon_home,
-                                              logo_guest=icon_guest)
+                # import web_pdb
+                # web_pdb.set_trace()
+                try:
 
-                theme_artwork = self.get_setting('theme_artwork')
+                    art_value = {
+                        "league": league,
+                        'logo_home': icon_home,
+                        'logo_guest': icon_guest,
+                        'logo_league': icon_league,
+                        "home": home,
+                        'guest': guest,
+                        'weekday': makeart.weekday(self.time_to_local(date_utc), self._language),
+                        'month': makeart.month(self.time_to_local(date_utc), self._language),
+                        'time': makeart.time(self.time_to_local(date_utc)),
+                    }
 
-                self.log(theme_artwork)
+                    art = makeart.ArtWork(self.dir('font'),
+                                          os.path.join(self.dir('data'), 'layout.json'),
+                                          art_value,
+                                          self.log)
 
-                art.language = self._language
+                    theme_artwork = self.get_setting('theme_artwork')
 
-                if theme_artwork == 0:  # Light
-                    art.set_light_theme()
-                elif theme_artwork == 1:  # Dark
-                    art.set_dark_theme()
-                elif theme_artwork == 2:  # Blue
-                    art.set_blue_theme()
-                elif theme_artwork == 3:  # Transparent
-                    art.set_transparent_theme()
-                else:
-                    self.logd('_parse_listing', 'error set artwork theme')
-                    art.set_light_theme()
+                    file_art = os.path.join(self.dir('thumb'), '{}_{}_{}.png'.format(id_, theme_artwork, '{}'))
 
-                if self.get_setting('is_thumb'):
-                    thumb = art.create_thumb()
-                    self.logd('_parse_listing', thumb)
-                if self.get_setting('is_fanart'):
-                    fanart = art.create_fanart(background=fanart)
-                    self.logd('_parse_listing', fanart)
-                if self.get_setting('is_poster'):
-                    poster = art.create_poster()
-                    self.logd('_parse_listing', poster)
+                    if theme_artwork == 0:  # Light
+                        art.set_color_font([0, 0, 0])
+                        art.set_background(os.path.join(self.dir('media'), 'light.png'))
+                    elif theme_artwork == 1:  # Dark
+                        art.set_background(os.path.join(self.dir('media'), 'dark.png'))
+                    elif theme_artwork == 2:  # Blue
+                        art.set_background(os.path.join(self.dir('media'), 'blue.png'))
+                    elif theme_artwork == 3:  # Transparent
+                        art.set_background(os.path.join(self.dir('media'), 'transparent.png'))
+                    else:
+                        self.logd('_parse_listing', 'error set artwork theme')
+
+                    if self.get_setting('is_thumb'):
+                        thumb = art.make_file(file_art.format('thumb'), 'thumb')
+                        self.logd('_parse_listing', thumb)
+                    if self.get_setting('is_fanart'):
+                        #art.set_background_type('fanart', self.fanart)
+                        fanart = art.make_file(file_art.format('fanart'), 'fanart')
+                        self.logd('_parse_listing', fanart)
+                    if self.get_setting('is_poster'):
+                        poster = art.make_file(file_art.format('poster'), 'poster')
+                        self.logd('_parse_listing', poster)
+
+                except Exception as e:
+                    self.logd('ArtWork', 'ERROR [{}]'.format(str(e)))
 
             if thumb:
                 icon = thumb
             else:
                 thumb = icon
-
-            # import web_pdb
-            # web_pdb.set_trace()
 
             listing[id_] = {}
             item = listing[id_]
@@ -1238,7 +1245,7 @@ class LiveSport(PluginSport):
             item['home'] = home
             item['icon_guest'] = icon_guest
             item['guest'] = guest
-
+            item['date_links'] = None
             item['url_links'] = url_links
             if 'href' is not item:
                 item['href'] = []

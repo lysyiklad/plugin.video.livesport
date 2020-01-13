@@ -1,0 +1,246 @@
+{
+    "fanart": {
+        "background": null,
+        "color_font": [
+            255,
+            255,
+            255
+        ],
+        "data": [
+            {
+                "key": "logo_league",
+                "pos": [
+                    540,
+                    10
+                ],
+                "size": [
+                    180,
+                    180
+                ],
+                "type": "picture"
+            },
+            {
+                "key": "logo_home",
+                "pos": [
+                    190,
+                    150
+                ],
+                "size": [
+                    400,
+                    400
+                ],
+                "type": "picture"
+            },
+            {
+                "key": "logo_guest",
+                "pos": [
+                    690,
+                    150
+                ],
+                "size": [
+                    400,
+                    400
+                ],
+                "type": "picture"
+            }
+        ],
+        "size": [
+            1280,
+            720
+        ]
+    },
+    "poster": {
+        "background": null,
+        "color_font": [
+            255,
+            255,
+            255
+        ],
+        "data": [
+            {
+                "color": null,
+                "font": "ubuntu_condensed",
+                "key": "league",
+                "size": 25,
+                "type": "text",
+                "x": null,
+                "y": 25
+            },
+            {
+                "key": "logo_home",
+                "pos": [
+                    50,
+                    100
+                ],
+                "size": [
+                    150,
+                    150
+                ],
+                "type": "picture"
+            },
+            {
+                "key": "logo_guest",
+                "pos": [
+                    270,
+                    100
+                ],
+                "size": [
+                    150,
+                    150
+                ],
+                "type": "picture"
+            },
+            {
+                "color": null,
+                "font": "bandera_pro",
+                "key": "home",
+                "size": 55,
+                "type": "text",
+                "x": null,
+                "y": 300
+            },
+            {
+                "color": null,
+                "data": "vs",
+                "font": "ubuntu",
+                "key": "vs",
+                "size": 30,
+                "type": "text",
+                "x": null,
+                "y": 365
+            },
+            {
+                "color": null,
+                "font": "bandera_pro",
+                "key": "guest",
+                "size": 55,
+                "type": "text",
+                "x": null,
+                "y": 410
+            },
+            {
+                "color": null,
+                "font": "ubuntu",
+                "key": "weekday",
+                "size": 30,
+                "type": "text",
+                "x": null,
+                "y": 530
+            },
+            {
+                "color": null,
+                "font": "ubuntu",
+                "key": "month",
+                "size": 30,
+                "type": "text",
+                "x": null,
+                "y": 575
+            },
+            {
+                "color": null,
+                "font": "bandera_pro",
+                "key": "time",
+                "size": 55,
+                "type": "text",
+                "x": null,
+                "y": 645
+            }
+        ],
+        "size": [
+            480,
+            720
+        ]
+    },
+    "thumb": {
+        "background": null,
+        "color_font": [
+            255,
+            255,
+            255
+        ],
+        "data": [
+            {
+                "color": null,
+                "font": "ubuntu_condensed",
+                "key": "league",
+                "size": 25,
+                "type": "text",
+                "x": null,
+                "y": 10
+            },
+            {
+                "key": "logo_home",
+                "pos": [
+                    70,
+                    80
+                ],
+                "size": [
+                    120,
+                    120
+                ],
+                "type": "picture"
+            },
+            {
+                "key": "logo_guest",
+                "pos": [
+                    290,
+                    80
+                ],
+                "size": [
+                    120,
+                    120
+                ],
+                "type": "picture"
+            },
+            {
+                "color": null,
+                "font": "bandera_pro",
+                "key": "home",
+                "size": 40,
+                "type": "text",
+                "x": null,
+                "y": 220
+            },
+            {
+                "color": null,
+                "font": "bandera_pro",
+                "key": "guest",
+                "size": 40,
+                "type": "text",
+                "x": null,
+                "y": 280
+            },
+            {
+                "color": null,
+                "font": "ubuntu",
+                "key": "weekday",
+                "size": 30,
+                "type": "text",
+                "x": null,
+                "y": 335
+            },
+            {
+                "color": null,
+                "font": "ubuntu",
+                "key": "month",
+                "size": 30,
+                "type": "text",
+                "x": null,
+                "y": 380
+            },
+            {
+                "color": null,
+                "font": "bandera_pro",
+                "key": "time",
+                "size": 55,
+                "type": "text",
+                "x": null,
+                "y": 420
+            }
+        ],
+        "size": [
+            485,
+            485
+        ]
+    }
+}
