@@ -67,14 +67,17 @@ def load_logo(value):
         else:
             logo = Image.open(io.BytesIO(get_http_content(value)))
     except Exception as e:
-        logo = Image.open('ace.png')
+        return None
     logo = logo.convert("RGBA")
     return logo
 
 
 def paste_logo(img, logo, size, pos):
-    logo = logo.resize(tuple(size), Image.ANTIALIAS)
-    img.paste(logo, tuple(pos), logo)
+    try:
+        logo = logo.resize(tuple(size), Image.ANTIALIAS)
+        img.paste(logo, tuple(pos), logo)
+    except:
+        pass
 
 
 def weekday(date, language):
@@ -97,6 +100,7 @@ def time(date):
 
 class ArtWork(object):
     LAYOUT_ARTWORK = None
+    #backgrounds = {}
 
     def __init__(self, folder_font, layout_json, data_, log=None):
         assert os.path.exists(layout_json)
@@ -159,11 +163,11 @@ class ArtWork(object):
         try:
             background = artwork['background']
             self.log('make_file background {}'.format(background))
-            if background not in self._images:
-                img = Image.open(background)
-                self._images[background] = img
-            else:
-                img = self._images[background]
+            # if background not in self.backgrounds:
+            #     img = Image.open(background)
+            #     self.backgrounds[background] = img
+            # else:
+            #     img = self.backgrounds[background]
             img = Image.open(background)
             if artwork['size'] is not None:
                 img = img.resize(tuple(artwork['size']), Image.ANTIALIAS)
