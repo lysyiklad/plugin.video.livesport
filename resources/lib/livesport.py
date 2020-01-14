@@ -10,7 +10,7 @@ standard_library.install_aliases()
 import requests
 import pickle
 # import re
-from . import simpleplugin, makeart
+from . import simpleplugin
 import xbmcgui
 import xbmc
 # import xbmcplugin
@@ -1092,6 +1092,8 @@ class LiveSport(PluginSport):
         still = total
         fill = 0
 
+        import_error = False
+
         for tag_match in tag_matchs:
 
             tag_a = tag_match.find('a')
@@ -1171,11 +1173,11 @@ class LiveSport(PluginSport):
             thumb = ''
             fanart = os.path.join(self.dir('media'), 'fanart_{}.jpg'.format(sport))
 
-            if self.is_create_artwork() and self._is_league(league, self._leagues_artwork):
+            if not import_error and self.is_create_artwork() and self._is_league(league, self._leagues_artwork):
                 # import web_pdb
                 # web_pdb.set_trace()
                 try:
-
+                    from . import makeart
                     art_value = {
                         "league": league,
                         'logo_home': icon_home,
@@ -1219,6 +1221,13 @@ class LiveSport(PluginSport):
                     if self.get_setting('is_poster'):
                         poster = art.make_file(file_art.format('poster'), 'poster')
                         self.logd('_parse_listing', poster)
+
+                except ImportError as e:
+                    self.logd('ArtWork', 'ImportError [{}]'.format(str(e)))
+                    xbmcgui.Dialog().notification(self.name,
+                                                  'ImportError, creation ArtWork is not possible!',
+                                                  self.icon, 3000)
+                    import_error = True
 
                 except Exception as e:
                     self.logd('ArtWork', 'ERROR [{}]'.format(str(e)))
