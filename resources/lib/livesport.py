@@ -29,10 +29,11 @@ from builtins import str
 # URL_NOT_LINKS = 'https://www.ixbt.com/multimedia/video-methodology/bitrates/avc-1080-25p/1080-25p-10mbps.mp4'
 URL_NOT_LINKS = 'http://tv-na-stene.ru/files/HD%20Red.mkv'
 
+
 HEADERS_HTTP = {'User-Agent':
-                    'Mozilla/4.0 (compatible; MSIE 8.0; Windows NT 5.1; Trident/4.0; Mozilla/4.0'
-                    ' (compatible; MSIE 6.0; Windows NT 5.1; SV1) ; .NET CLR 1.1.4322; .NET CLR 2.0.50727; '
-                    '.NET CLR 3.0.4506.2152; .NET CLR 3.5.30729; .NET4.0C)'}
+                'Mozilla/4.0 (compatible; MSIE 8.0; Windows NT 5.1; Trident/4.0; Mozilla/4.0'
+                ' (compatible; MSIE 6.0; Windows NT 5.1; SV1) ; .NET CLR 1.1.4322; .NET CLR 2.0.50727; '
+                '.NET CLR 3.0.4506.2152; .NET CLR 3.5.30729; .NET4.0C)'}
 
 
 def file_read(file):
@@ -258,8 +259,8 @@ class PluginSport(simpleplugin.Plugin):
         self.logd('links', 'item %s' % item)
         self.logd('links', 'date_links %s' % item['date_links'])
         scan_now = None
-        if links:
-            scan_now = int((self.time_now_utc() - item['date_links']).total_seconds() / 60)
+        # if links:
+        #     scan_now = int((self.time_now_utc() - item['date_links']).total_seconds() / 60)
 
         self.logd('links', 'id %s' % id_)
         self.logd('links', links)
@@ -822,25 +823,40 @@ class LiveSport(PluginSport):
         return listing
 
     def _resolve_direct_link(self, href):
+        link = ''
         try:
             html = self.get_http(href).content
+            self.logd('_resolve_direct_link - href', href)
+
+            #file_html = os.path.join(self.path, 'directlink.html')
+            # if not os.path.exists(file_html):
+            #     with open(file_html, 'wb') as f:
+            #         f.write(html)
+            #html = file_read(file_html)
 
             soup = bs4.BeautifulSoup(html, 'html.parser')
             tag_iframe = soup.find('iframe')
-            src_html = self.get_http(tag_iframe['src']).content
+            src = tag_iframe['src']
+            self.logd('_resolve_direct_link - iframe src', src)
+            prs = urlparse(src)
+            if prs.netloc == '365lives.net':
+                src_html = self.get_http('https://api.livesports24.online/gethost').content
+                link =  'https://' + src_html + '/' + prs.path.split('/')[-1] + '.m3u8'
+            elif prs.netloc == '777sportba.com' or prs.netloc == 'mmm.08sportbar.com':
+                src_html = self.get_http(src).content
+                if src_html is None:
+                    return ''
+                ilink = src_html.find(b'var videoLink')
+                if ilink != -1:
+                    i1 = src_html.find(b'\'', ilink)
+                    i2 = src_html.find(b'\'', i1 + 1)
+                    link = src_html[i1 + 1:i2]
         except Exception as e:
             # xbmcgui.Dialog().notification(self.name, str(e), self.icon, 2000)
             self.logd('ERROR RESOLVE HREF ({})'.format(href), str(e))
             return ''
-        if src_html is None:
-            return ''
-        ilink = src_html.find(b'var videoLink')
-        if ilink != -1:
-            i1 = src_html.find(b'\'', ilink)
-            i2 = src_html.find(b'\'', i1 + 1)
-            return src_html[i1 + 1:i2]
-        else:
-            return ''
+        self.logd('_resolve_direct_link - link', link)
+        return link
 
     def _get_match_center_mini(self):
         try:

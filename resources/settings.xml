@@ -10,7 +10,7 @@
 		<setting id="is_date_item" type="bool" label="30038" default="true" visible="true"/>
 		<setting id="is_league_item" type="bool" label="30039" default="true" visible="true"/>
 		<setting id="delta_scan" type="number" label="10003" default="60" visible="true"/>
-		<setting id="delta_links" type="number" label="10010" default="5" visible="true"/>
+		<setting id="delta_links" type="number" label="10010" default="5" visible="false"/>
 <!--		<setting id="reset" type="action" label="30024" action="RunPlugin(plugin://plugin.video.livesport?action=reset)" />-->
 	</category>
 	<category label="AceStream"> 
