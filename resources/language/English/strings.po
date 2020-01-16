@@ -301,3 +301,7 @@ msgstr ""
 msgctxt "#30042"
 msgid "Completed"
 msgstr ""
+
+msgctxt "#30043"
+msgid "Show REFRESH ... button in categories"
+msgstr ""

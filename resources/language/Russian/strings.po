@@ -293,3 +293,7 @@ msgstr "Выбор турниров для создания ArtWork..."
 msgctxt "#30042"
 msgid "Completed"
 msgstr "Законченные"
+
+msgctxt "#30043"
+msgid "Show REFRESH ... button in categories"
+msgstr "Показать кнопку ОБНОВИТЬ... в категориях"
