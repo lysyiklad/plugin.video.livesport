@@ -821,6 +821,11 @@ class LiveSport(PluginSport):
         ]
         return listing
 
+    @staticmethod
+    def find_src(html, tag, quotes, start=0):
+        i1 = html.find(quotes, html.find(tag, start))
+        return html[i1 + 1:html.find(quotes, i1 + 1)]
+
     def _resolve_direct_link(self, href):
         link = ''
         try:
@@ -835,16 +840,12 @@ class LiveSport(PluginSport):
                 src_html = self.get_http('https://api.livesports24.online/gethost').content
                 link = 'https://' + src_html + '/' + prs.path.split('/')[-1] + '.m3u8'
             elif prs.netloc == '777sportba.com' or prs.netloc == 'mmm.08sportbar.com':
-                src_html = self.get_http(src).content
-                # self.log(src_html)
-                if src_html is None:
-                    return ''
-                ilink = src_html.find(b'var videoLink')
-                if ilink != -1:
-                    i1 = src_html.find(b'\'', ilink)
-                    i2 = src_html.find(b'\'', i1 + 1)
-                    link = src_html[i1 + 1:i2]
-                    # link = link.replace('777sportba.com', 'mmm.08sportbar.com')
+                link = self.find_src(self.get_http(src).content, b'var videoLink', b'\'')
+                #link = link.replace('777sportba.com', 'mmm.08sportbar.com')
+            elif prs.netloc == 'sportsbay.org':
+                #h = self.get_http(src).content
+                #link = self.find_src(h, b'source:', b'\'', h.find(b'new Clappr.Player({'))
+                link = src
             elif prs.netloc == 'dummyview.online':
                 src_json = 'http://185.255.96.166:3007/api/streams/2/channels/' + prs.path.split('/')[-1]
                 self.logd('_resolve_direct_link - src_json', src_json)
@@ -854,23 +855,23 @@ class LiveSport(PluginSport):
                 self.logd('_resolve_direct_link - src', src)
                 if urlparse(src).netloc == 'ok.ru':
                     tok = bs4.BeautifulSoup(self.get_http(src).content, 'html.parser')
-                    self.logd('_resolve_direct_link - ok.ru', tok)
+                    #self.logd('_resolve_direct_link - ok.ru', tok)
                     do = json.loads(tok.find("div", {"data-options": re.compile(r".*")})['data-options'])
                     self.logd('_resolve_direct_link - data_options', do)
                     link = json.loads(do['flashvars']['metadata'])['hlsMasterPlaylistUrl']
                 elif urlparse(src).netloc == 'rutube.ru':
                     link = src
+                elif urlparse(src).netloc == 'box-live.stream':
+                    h = self.get_http(src).content
+                    link = self.find_src(h, b'source:', b'\'', h.find(b'new Clappr.Player({'))
+                elif urlparse(src).netloc == 'bilasport.net':
+                    link = src
             elif prs.netloc == 'flowframes.online':
-                pass
+                link = 'flowframes.online'
             elif prs.netloc == 'assia.tv':
-                src_html = self.get_http(src).content
-                if src_html is None:
-                    return ''
-                ilink = src_html.find(b'file:')
-                if ilink != -1:
-                    i1 = src_html.find(b'\"', ilink)
-                    i2 = src_html.find(b'\"', i1 + 1)
-                    link = src_html[i1 + 1:i2]
+                link = self.find_src(self.get_http(src).content, b'file:', b'\"')
+            elif prs.netloc == 'vamosplay.tech':
+                link = 'http://51.91.16.61/channels/{}/stream.m3u8'.format(prs.path.split('/')[-1])
 
         except Exception as e:
             xbmcgui.Dialog().notification(self.name, str(e), self.icon, 2000)
