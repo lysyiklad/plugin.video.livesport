@@ -8,6 +8,7 @@ from future import standard_library
 
 standard_library.install_aliases()
 import requests
+import urllib
 import pickle
 import re
 from . import simpleplugin
@@ -29,10 +30,11 @@ from builtins import str
 # URL_NOT_LINKS = 'https://www.ixbt.com/multimedia/video-methodology/bitrates/avc-1080-25p/1080-25p-10mbps.mp4'
 URL_NOT_LINKS = 'http://tv-na-stene.ru/files/HD%20Red.mkv'
 
-HEADERS_HTTP = {'User-Agent':
-                    'Mozilla/4.0 (compatible; MSIE 8.0; Windows NT 5.1; Trident/4.0; Mozilla/4.0'
-                    ' (compatible; MSIE 6.0; Windows NT 5.1; SV1) ; .NET CLR 1.1.4322; .NET CLR 2.0.50727; '
-                    '.NET CLR 3.0.4506.2152; .NET CLR 3.5.30729; .NET4.0C)'}
+USER_AGENT = 'Mozilla/4.0 (compatible; MSIE 8.0; Windows NT 5.1; Trident/4.0; Mozilla/4.0(compatible; MSIE 6.0; ' \
+             'Windows NT 5.1; SV1) ; .NET CLR 1.1.4322; .NET CLR 2.0.50727; .NET CLR 3.0.4506.2152; ' \
+             '.NET CLR 3.5.30729; .NET4.0C)'
+
+HEADERS_HTTP = {'User-Agent': USER_AGENT}
 
 
 def file_read(file):
@@ -827,6 +829,7 @@ class LiveSport(PluginSport):
         return html[i1 + 1:html.find(quotes, i1 + 1)]
 
     def _resolve_direct_link(self, href):
+
         link = ''
         try:
             html = self.get_http(href).content
@@ -841,10 +844,9 @@ class LiveSport(PluginSport):
                 link = 'https://' + src_html + '/' + prs.path.split('/')[-1] + '.m3u8'
             elif prs.netloc == '777sportba.com' or prs.netloc == 'mmm.08sportbar.com':
                 link = self.find_src(self.get_http(src).content, b'var videoLink', b'\'')
-                #link = link.replace('777sportba.com', 'mmm.08sportbar.com')
+                #self.log(self.get_http(src).content)
+                # link = link.replace('777sportba.com', 'mmm.08sportbar.com')
             elif prs.netloc == 'sportsbay.org':
-                #h = self.get_http(src).content
-                #link = self.find_src(h, b'source:', b'\'', h.find(b'new Clappr.Player({'))
                 link = src
             elif prs.netloc == 'dummyview.online':
                 src_json = 'http://185.255.96.166:3007/api/streams/2/channels/' + prs.path.split('/')[-1]
@@ -855,7 +857,7 @@ class LiveSport(PluginSport):
                 self.logd('_resolve_direct_link - src', src)
                 if urlparse(src).netloc == 'ok.ru':
                     tok = bs4.BeautifulSoup(self.get_http(src).content, 'html.parser')
-                    #self.logd('_resolve_direct_link - ok.ru', tok)
+                    # self.logd('_resolve_direct_link - ok.ru', tok)
                     do = json.loads(tok.find("div", {"data-options": re.compile(r".*")})['data-options'])
                     self.logd('_resolve_direct_link - data_options', do)
                     link = json.loads(do['flashvars']['metadata'])['hlsMasterPlaylistUrl']
@@ -867,7 +869,7 @@ class LiveSport(PluginSport):
                 elif urlparse(src).netloc == 'bilasport.net':
                     link = src
             elif prs.netloc == 'flowframes.online':
-                link = 'flowframes.online'
+                link = src
             elif prs.netloc == 'assia.tv':
                 link = self.find_src(self.get_http(src).content, b'file:', b'\"')
             elif prs.netloc == 'vamosplay.tech':
@@ -880,14 +882,17 @@ class LiveSport(PluginSport):
         if link:
             p = urlparse(link)
             xbmcgui.Dialog().notification(self.name, p.scheme + '://' + p.netloc + '/', self.icon, 3000)
+
+        USER_AGENT = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/75.0.3730.0 Safari/537.36'
+        # link = '{0}|Referer={1}&User-Agent={2}'.format(link, urllib.quote(link, safe=''), USER_AGENT)
+        link = '{0}|User-Agent={1}'.format(link, USER_AGENT)
         self.logd('_resolve_direct_link - link', link)
         return link
 
     def _get_match_center_mini(self):
         try:
-            center = self.get_http(
-                'https://moon.livesport.ws/engine/modules/sports/sport_template_loader.php?'
-                'from=showfull&template=match/main_match_center_mini_refresher').content
+            center = self.get_http('https://moon.livesport.ws/engine/modules/sports/sport_template_loader.php?'
+                                   'from=showfull&template=match/main_match_center_mini_refresher').content
         except Exception as e:
             self.logd('ERROR GET MATCH CENTER MINI', str(e))
             return None
@@ -1137,175 +1142,183 @@ class LiveSport(PluginSport):
 
         for tag_match in tag_matchs:
 
-            tag_a = tag_match.find('a')
-            game = tag_a['title']
-            id_ = int(tag_a['href'].split('/')[-1].split('-')[0])
-
-            icon_sport = tag_a.find('span', {'class': 'sport'}).find('img')['data-src']
-
-            league = tag_a.find('span', {'class': 'competition'}).text
-
-            if not self._is_league(league, self._leagues):
-                still = still - 1
-                continue
-
-            icon_league = ''
-
-            if league not in icons_league:
-                try:
-                    href = self.get_setting('url_site') + tag_a['href']
-
-                    file_html = os.path.join(self.path, 'links2.html')
-
-                    h = self.get_http(href).content
-
-                    s = bs4.BeautifulSoup(h, 'html.parser')
-
-                    tag_figure = s.find('figure', {'class': 'visual'})
-                    tag_image = tag_figure.find('img')
-                    icons_league[league] = tag_image['src']
-                    icon_league = tag_image['src']
-
-                    with open(self._icons_league_pcl, 'wb') as f:
-                        pickle.dump(icons_league, f)
-
-                except:
-                    pass
-            else:
-                icon_league = icons_league[league]
-
-            sport = os.path.basename(urlparse(icon_sport).path).split('.')[0]
-
-            icon_sport = os.path.join(self.dir('media'), '{}.png'.format(sport))
-
-            tag_i = tag_a.find('span', {'class': 'date'}).find('i')
-            id_event = int(tag_i['id'].split('-')[1])
-
-            if self._language != 'Russian':
-                url_links = '{}/engine/modules/sports/sport_refresh.php?' \
-                            'from=event&event_id={}&tab_id=undefined&post_id={}&lang=en'.format(
-                    self.get_setting('url_site'), id_event, str(id_))
-            else:
-                url_links = '{}/engine/modules/sports/sport_refresh.php?' \
-                            'from=event&event_id={}&tab_id=undefined&post_id={}'.format(
-                    self._site, id_event, str(id_))
-
-            date_naive = tag_i['data-datetime']
-            # self.logd('date_naive', date_naive)
             try:
-                dt = dateutil.parser.parse(date_naive, dayfirst=True)
-            except ValueError as e:
-                self.logd('_parse_listing ERROR DATEUTIL PARSE', str(e))
-                if e.message == 'hour must be in 0..23':
-                    dt = dateutil.parser.parse(date_naive.split()[0])
 
-            date_utc = self._time_naive_site_to_utc_aware(dt)
+                tag_a = tag_match.find('a')
+                game = tag_a['title']
+                id_ = int(tag_a['href'].split('/')[-1].split('-')[0])
 
-            tags_div = tag_a.find(
-                'div', {'class': 'commands commands_match_center'}).findAll('div')
+                icon_sport = tag_a.find('span', {'class': 'sport'}).find('img')['data-src']
 
-            icon_home = tags_div[1].findAll('img')[0]['data-src'].replace('?18x18=1', '')
-            home = tags_div[0].text
-            icon_guest = tags_div[1].findAll('img')[1]['data-src'].replace('?18x18=1', '')
-            guest = tags_div[2].text
+                league = tag_a.find('span', {'class': 'competition'}).text
 
-            icon = icon_sport if not icon_league else icon_league
-            poster = ''
-            thumb = ''
-            fanart = os.path.join(self.dir('media'), 'fanart_{}.jpg'.format(sport))
+                if not self._is_league(league, self._leagues):
+                    still = still - 1
+                    continue
 
-            if not import_error and self.is_create_artwork() and self._is_league(league, self._leagues_artwork):
-                # import web_pdb
-                # web_pdb.set_trace()
+                icon_league = ''
+
+                if league not in icons_league:
+                    try:
+                        href = self.get_setting('url_site') + tag_a['href']
+
+                        file_html = os.path.join(self.path, 'links2.html')
+
+                        h = self.get_http(href).content
+
+                        s = bs4.BeautifulSoup(h, 'html.parser')
+
+                        tag_figure = s.find('figure', {'class': 'visual'})
+                        tag_image = tag_figure.find('img')
+                        icons_league[league] = tag_image['src']
+                        icon_league = tag_image['src']
+
+                        with open(self._icons_league_pcl, 'wb') as f:
+                            pickle.dump(icons_league, f)
+
+                    except:
+                        pass
+                else:
+                    icon_league = icons_league[league]
+
+                sport = os.path.basename(urlparse(icon_sport).path).split('.')[0]
+
+                icon_sport = os.path.join(self.dir('media'), '{}.png'.format(sport))
+
+                tag_i = tag_a.find('span', {'class': 'date'}).find('i')
+                id_event = int(tag_i['id'].split('-')[1])
+
+                if self._language != 'Russian':
+                    url_links = '{}/engine/modules/sports/sport_refresh.php?' \
+                                'from=event&event_id={}&tab_id=undefined&post_id={}&lang=en'.format(
+                        self.get_setting('url_site'), id_event, str(id_))
+                else:
+                    url_links = '{}/engine/modules/sports/sport_refresh.php?' \
+                                'from=event&event_id={}&tab_id=undefined&post_id={}'.format(
+                        self._site, id_event, str(id_))
+
+                date_naive = tag_i['data-datetime']
+                # self.logd('date_naive', date_naive)
                 try:
-                    from . import makeart
-                    art_value = {
-                        "league": league,
-                        'logo_home': icon_home,
-                        'logo_guest': icon_guest,
-                        'logo_league': icon_league,
-                        "home": home,
-                        'guest': guest,
-                        'weekday': makeart.weekday(self.time_to_local(date_utc), self._language),
-                        'month': makeart.month(self.time_to_local(date_utc), self._language),
-                        'time': makeart.time(self.time_to_local(date_utc)),
-                    }
+                    dt = dateutil.parser.parse(date_naive, dayfirst=True)
+                except ValueError as e:
+                    self.logd('_parse_listing ERROR DATEUTIL PARSE', str(e))
+                    if e.message == 'hour must be in 0..23':
+                        dt = dateutil.parser.parse(date_naive.split()[0])
 
-                    art = makeart.ArtWork(self.dir('font'),
-                                          os.path.join(self.dir('data'), 'layout.json'),
-                                          art_value,
-                                          self.log)
+                date_utc = self._time_naive_site_to_utc_aware(dt)
 
-                    theme_artwork = self.get_setting('theme_artwork')
+                tags_div = tag_a.find('div', {'class': 'commands commands_match_center'}).findAll('div')
 
-                    file_art = os.path.join(self.dir('thumb'), '{}_{}_{}.png'.format(id_, theme_artwork, '{}'))
+                self.logd('tags_div', tags_div)
 
-                    if theme_artwork == 0:  # Light
-                        art.set_color_font([0, 0, 0])
-                        art.set_background(os.path.join(self.dir('media'), 'light.png'))
-                    elif theme_artwork == 1:  # Dark
-                        art.set_background(os.path.join(self.dir('media'), 'dark.png'))
-                    elif theme_artwork == 2:  # Blue
-                        art.set_background(os.path.join(self.dir('media'), 'blue.png'))
-                    elif theme_artwork == 3:  # Transparent
-                        art.set_background(os.path.join(self.dir('media'), 'transparent.png'))
-                    else:
-                        self.logd('_parse_listing', 'error set artwork theme')
+                icon_home = tags_div[1].findAll('img')[0]['data-src'].replace('?18x18=1', '')
 
-                    if self.get_setting('is_thumb'):
-                        thumb = art.make_file(file_art.format('thumb'), 'thumb')
-                        self.logd('_parse_listing', thumb)
-                    if self.get_setting('is_fanart'):
-                        # art.set_background_type('fanart', self.fanart)
-                        fanart = art.make_file(file_art.format('fanart'), 'fanart')
-                        self.logd('_parse_listing', fanart)
-                    if self.get_setting('is_poster'):
-                        poster = art.make_file(file_art.format('poster'), 'poster')
-                        self.logd('_parse_listing', poster)
+                home = tags_div[0].text
+                icon_guest = tags_div[1].findAll('img')[1]['data-src'].replace('?18x18=1', '')
 
-                except ImportError as e:
-                    self.logd('ArtWork', 'ImportError [{}]'.format(str(e)))
-                    xbmcgui.Dialog().notification(self.name,
-                                                  'ImportError, creation ArtWork is not possible!',
-                                                  self.icon, 3000)
-                    import_error = True
+                guest = tags_div[2].text
 
-                except Exception as e:
-                    self.logd('ArtWork', 'ERROR [{}]'.format(str(e)))
+                icon = icon_sport if not icon_league else icon_league
+                poster = ''
+                thumb = ''
+                fanart = os.path.join(self.dir('media'), 'fanart_{}.jpg'.format(sport))
 
-            if thumb:
-                icon = thumb
-            else:
-                thumb = icon
+                if not import_error and self.is_create_artwork() and self._is_league(league, self._leagues_artwork):
+                    # import web_pdb
+                    # web_pdb.set_trace()
+                    try:
+                        from . import makeart
+                        art_value = {
+                            "league": league,
+                            'logo_home': icon_home,
+                            'logo_guest': icon_guest,
+                            'logo_league': icon_league,
+                            "home": home,
+                            'guest': guest,
+                            'weekday': makeart.weekday(self.time_to_local(date_utc), self._language),
+                            'month': makeart.month(self.time_to_local(date_utc), self._language),
+                            'time': makeart.time(self.time_to_local(date_utc)),
+                        }
 
-            listing[id_] = {}
-            item = listing[id_]
-            item['id'] = id_
-            item['id_event'] = id_event
-            item['sport'] = sport
-            item['status'] = tag_i.text
-            item['label'] = game
-            item['league'] = league
-            item['date'] = date_utc
-            item['thumb'] = thumb
-            item['icon'] = icon
-            item['poster'] = poster
-            item['fanart'] = fanart
-            item['icon_home'] = icon_home
-            item['home'] = home
-            item['icon_guest'] = icon_guest
-            item['guest'] = guest
-            item['date_links'] = None
-            item['url_links'] = url_links
-            if 'href' is not item:
-                item['href'] = []
+                        art = makeart.ArtWork(self.dir('font'),
+                                              os.path.join(self.dir('data'), 'layout.json'),
+                                              art_value,
+                                              self.log)
 
-            self.log('ADD MATCH - %s' % item)
+                        theme_artwork = self.get_setting('theme_artwork')
 
-            if progress:
-                still = still - 1
-                fill = 100 - int(100 * float(still) / total)
-                progress.update(fill, message=game)
+                        file_art = os.path.join(self.dir('thumb'), '{}_{}_{}.png'.format(id_, theme_artwork, '{}'))
+
+                        if theme_artwork == 0:  # Light
+                            art.set_color_font([0, 0, 0])
+                            art.set_background(os.path.join(self.dir('media'), 'light.png'))
+                        elif theme_artwork == 1:  # Dark
+                            art.set_background(os.path.join(self.dir('media'), 'dark.png'))
+                        elif theme_artwork == 2:  # Blue
+                            art.set_background(os.path.join(self.dir('media'), 'blue.png'))
+                        elif theme_artwork == 3:  # Transparent
+                            art.set_background(os.path.join(self.dir('media'), 'transparent.png'))
+                        else:
+                            self.logd('_parse_listing', 'error set artwork theme')
+
+                        if self.get_setting('is_thumb'):
+                            thumb = art.make_file(file_art.format('thumb'), 'thumb')
+                            self.logd('_parse_listing', thumb)
+                        if self.get_setting('is_fanart'):
+                            # art.set_background_type('fanart', self.fanart)
+                            fanart = art.make_file(file_art.format('fanart'), 'fanart')
+                            self.logd('_parse_listing', fanart)
+                        if self.get_setting('is_poster'):
+                            poster = art.make_file(file_art.format('poster'), 'poster')
+                            self.logd('_parse_listing', poster)
+
+                    except ImportError as e:
+                        self.logd('ArtWork', 'ImportError [{}]'.format(str(e)))
+                        xbmcgui.Dialog().notification(self.name,
+                                                      'ImportError, creation ArtWork is not possible!',
+                                                      self.icon, 3000)
+                        import_error = True
+
+                    except Exception as e:
+                        self.logd('ArtWork', 'ERROR [{}]'.format(str(e)))
+
+                if thumb:
+                    icon = thumb
+                else:
+                    thumb = icon
+
+                listing[id_] = {}
+                item = listing[id_]
+                item['id'] = id_
+                item['id_event'] = id_event
+                item['sport'] = sport
+                item['status'] = tag_i.text
+                item['label'] = game
+                item['league'] = league
+                item['date'] = date_utc
+                item['thumb'] = thumb
+                item['icon'] = icon
+                item['poster'] = poster
+                item['fanart'] = fanart
+                item['icon_home'] = icon_home
+                item['home'] = home
+                item['icon_guest'] = icon_guest
+                item['guest'] = guest
+                item['date_links'] = None
+                item['url_links'] = url_links
+                if 'href' is not item:
+                    item['href'] = []
+
+                self.log('ADD MATCH - %s' % item)
+
+                if progress:
+                    still = still - 1
+                    fill = 100 - int(100 * float(still) / total)
+                    progress.update(fill, message=game)
+
+            except Exception as e:
+                self.logd('_parse_listing', 'ERROR - %s' % str(e))
 
         return listing
 
