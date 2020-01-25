@@ -842,8 +842,12 @@ class LiveSport(PluginSport):
             if prs.netloc == '365lives.net':
                 src_html = self.get_http('https://api.livesports24.online/gethost').content
                 link = 'https://' + src_html + '/' + prs.path.split('/')[-1] + '.m3u8'
+            elif prs.netloc == 'whd365.pro':
+                link = 'https://185-198-56-58.livesports24.online/{}.m3u8'.format(prs.path.split('/')[-1])
             elif prs.netloc == '777sportba.com' or prs.netloc == 'mmm.08sportbar.com':
                 link = self.find_src(self.get_http(src).content, b'var videoLink', b'\'')
+                if not urlparse(link).scheme:
+                    link = 'https:' + link
                 #self.log(self.get_http(src).content)
                 # link = link.replace('777sportba.com', 'mmm.08sportbar.com')
             elif prs.netloc == 'sportsbay.org':
@@ -960,6 +964,9 @@ class LiveSport(PluginSport):
                 if info_match['status'] != u'LIVE':
                     continue
 
+                if not item['home']:
+                    continue
+
                 labels.append(
                     u'[B]{} - {}[/B]  {}'.format(info_match['scorel'], info_match['scorer'], item['label'])
                 )
@@ -1019,8 +1026,9 @@ class LiveSport(PluginSport):
         scorel = '' if data['events'] is None else data['events'][0]
         scorer = '' if data['events'] is None else data['events'][1]
 
-        labels.append(u'[B]{}    {} : {}    {} [/B]'.format(self.get(id_, 'home'), scorel,
-                                                            scorer, self.get(id_, 'guest')))
+        if self.get(id_, 'home'):
+            labels.append(u'[B]{}    {} : {}    {} [/B]'.format(self.get(id_, 'home'), scorel,
+                                                                scorer, self.get(id_, 'guest')))
 
         label_broadcast = '[COLOR FF0084FF][B]{}[/B][/COLOR]'.format(_('BROADCASTS:'))
         label_reviews = '[COLOR FF0084FF][B]{}[/B][/COLOR]'.format(_('REVIEWS:'))
@@ -1150,7 +1158,8 @@ class LiveSport(PluginSport):
 
                 icon_sport = tag_a.find('span', {'class': 'sport'}).find('img')['data-src']
 
-                league = tag_a.find('span', {'class': 'competition'}).text
+                #league = tag_a.find('span', {'class': 'competition'}).text
+                league = tag_a.findAll('span')[-1].text
 
                 if not self._is_league(league, self._leagues):
                     still = still - 1
@@ -1208,16 +1217,22 @@ class LiveSport(PluginSport):
 
                 date_utc = self._time_naive_site_to_utc_aware(dt)
 
-                tags_div = tag_a.find('div', {'class': 'commands commands_match_center'}).findAll('div')
+                try:
+                    tags_div = tag_a.find('div', {'class': 'commands commands_match_center'}).findAll('div')
 
-                self.logd('tags_div', tags_div)
+                    icon_home = tags_div[1].findAll('img')[0]['data-src'].replace('?18x18=1', '')
 
-                icon_home = tags_div[1].findAll('img')[0]['data-src'].replace('?18x18=1', '')
+                    home = tags_div[0].text
+                    icon_guest = tags_div[1].findAll('img')[1]['data-src'].replace('?18x18=1', '')
 
-                home = tags_div[0].text
-                icon_guest = tags_div[1].findAll('img')[1]['data-src'].replace('?18x18=1', '')
+                    guest = tags_div[2].text
+                except:
+                    icon_home = ''
+                    home = ''
+                    icon_guest = ''
+                    guest = ''
+                    game = ' '
 
-                guest = tags_div[2].text
 
                 icon = icon_sport if not icon_league else icon_league
                 poster = ''
@@ -1509,13 +1524,17 @@ class LiveSport(PluginSport):
         #     info_mini['scorel'],
         #     info_mini['scorer']
         # )
-        plot = u'%s\n%s\n%s\n\n[B]                  %s  :  %s[/B]' % (
-            self.time_to_local(self.get(id_, 'date')).strftime('%d.%m %H:%M'),
-            self.get(id_, 'league'),
-            self.get(id_, 'label'),
-            scorel,
-            scorer
-        )
+        if self.get(id_, 'home'):
+            plot = u'%s\n%s\n%s\n\n[B]                  %s  :  %s[/B]' % (
+                self.time_to_local(self.get(id_, 'date')).strftime('%d.%m %H:%M'),
+                self.get(id_, 'league'),
+                self.get(id_, 'label'),
+                scorel,
+                scorer
+            )
+        else:
+            plot = u'%s\n%s' % (self.time_to_local(self.get(id_, 'date')).strftime('%d.%m %H:%M'),
+                self.get(id_, 'league'))
 
         l = []
 
@@ -1541,13 +1560,14 @@ class LiveSport(PluginSport):
         #           'url': '',
         #           'is_playable': False,
         #           'is_folder': False})
-        l.append({'label': u'[B]{}    {} : {}    {} [/B]'.format(self.get(id_, 'home'), scorel, scorer,
-                                                                 self.get(id_, 'guest')),
-                  'info': {'video': {'title': title, 'plot': plot}},
-                  'art': art,
-                  'url': '',
-                  'is_playable': False,
-                  'is_folder': False})
+        if self.get(id_, 'home'):
+            l.append({'label': u'[B]{}    {} : {}    {} [/B]'.format(self.get(id_, 'home'), scorel, scorer,
+                                                                     self.get(id_, 'guest')),
+                      'info': {'video': {'title': title, 'plot': plot}},
+                      'art': art,
+                      'url': '',
+                      'is_playable': False,
+                      'is_folder': False})
 
         for link in links:
             if link['status'] == 'broadcast':
@@ -1661,15 +1681,18 @@ class LiveSport(PluginSport):
                     status, self.time_to_local(date_).strftime('%d.%m %H:%M'), item['label'], item['league'])
 
                 if info_match is not None and (info_match['status'] == u'OFFLINE' or info_match['status'] == u'LIVE'):
-                    lab = u'[B]{} - {}[/B]  {}'.format(
-                        info_match['scorel'], info_match['scorer'], info_match['status'])
+                    if item['home']:
+                        lab = u'[B]{} - {}[/B]  {}'.format(info_match['scorel'], info_match['scorer'], info_match['status'])
+                    else:
+                        lab = u'{}'.format(info_match['status'])
+
+
                     if info_match['status'] == 'OFFLINE':
                         status = 'FF999999'
                     elif info_match['status'] == 'LIVE':
                         status = 'FFFF0000'
                 else:
-                    lab = self.time_to_local(date_).strftime(
-                        '%d.%m %H:%M' if self.get_setting('is_date_item') else '%H:%M')
+                    lab = self.time_to_local(date_).strftime('%d.%m %H:%M' if self.get_setting('is_date_item') else '%H:%M')
 
                 label = '[COLOR %s]%s[/COLOR] - [B]%s[/B]    %s' % (
                     status, lab, item['label'], item['league'] if self.get_setting('is_league_item') else '')
